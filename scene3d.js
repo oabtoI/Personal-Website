@@ -884,7 +884,7 @@ const pPrev = new THREE.Vector2(), pVel = new THREE.Vector2(); let pHave = false
 const flowerNdc = new V3();
 
 /* ---------- the embedded garden ---------- */
-const GARDEN_VERSION = '21';
+const GARDEN_VERSION = '22';
 let gframe = null, gOn = null, gSheet = null, gLabels = [], gPan = -1;
 const gpost = m => gframe && gframe.contentWindow && gframe.contentWindow.postMessage(m, '*');
 function loadGarden() {
@@ -915,7 +915,15 @@ const ease = k => k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
 const initial = window.__room || (location.hash === '#garden' ? 'garden' : 'home');
 goRoom(initial, true);
 let sceneShown = false;
-if (initial === 'garden') loadGarden(); else setTimeout(loadGarden, 1500);
+// The garden iframe shares this page's main thread, and building it takes a moment, so don't start it during the
+// landing intro: wait until the intro has played and the browser is idle, or start at once if someone heads for it.
+if (initial === 'garden') loadGarden();
+else {
+  const idle = window.requestIdleCallback || (f => setTimeout(f, 200));
+  addEventListener('scene-ready', () => setTimeout(() => idle(loadGarden, { timeout: 3000 }), 4500), { once: true });
+  const way = document.querySelector('.explore');
+  if (way) for (const ev of ['pointerenter', 'focus', 'touchstart']) way.addEventListener(ev, loadGarden, { once: true, passive: true });
+}
 addEventListener('room', e => { if (e.detail === 'garden') loadGarden(); });
 
 renderer.setAnimationLoop(() => {

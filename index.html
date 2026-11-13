@@ -200,7 +200,7 @@
   .dbhead{display:flex;align-items:center;justify-content:space-between;gap:16px;border-bottom:1px solid var(--rule);padding-bottom:8px;margin-bottom:16px}
   .dbhead h3{font-size:1.25rem;line-height:1.75rem;font-weight:600}
   .view{display:inline-flex;gap:4px;align-items:center;font-size:.875rem;line-height:1.25rem;color:var(--text-2);padding:2px 8px;border-radius:4px;background:var(--hover)}
-  .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
+  .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:16px}
   .card{display:flex;flex-direction:column;border:1px solid var(--rule);border-radius:8px;overflow:hidden;background:var(--paper);
         box-shadow:0 1px 2px rgba(55,53,47,.06);transition:transform .5s var(--ease),box-shadow .3s var(--ease)}
   a.card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(55,53,47,.12)}
@@ -518,10 +518,14 @@
     projects: {
       quote: '{{A line about how you like to work}}',
       items: [
-        { title: '{{Project one}}',   tag: 'in progress', color: 'yellow', cover: 'assets/covers/c5.jpg', text: '{{One sentence on what it is}}', link: '' },
-        { title: '{{Project two}}',   tag: 'finished',    color: 'green',  cover: 'assets/covers/c2.jpg', text: '{{One sentence on what it is}}', link: '' },
-        { title: '{{Project three}}', tag: 'finished',    color: 'green',  cover: 'assets/covers/c6.jpg', text: '{{One sentence on what it is}}', link: '' },
-        { title: '{{Project four}}',  tag: 'idea',        color: 'pink',   cover: 'assets/covers/c3.jpg', text: '{{One sentence on what it is}}', link: '' },
+        { title: 'BOSCO', tag: 'finished', color: 'green', cover: 'assets/covers/bosco.jpg', link: 'https://github.com/owly1/hacktv',
+          text: "We built BOSCO, a wildfire-monitoring system for a Parrot ANAFI drone. A Node dashboard streams live camera and telemetry, and a fire detector running on a laptop flags flames. Using the flight controller's own wind estimate, it forecasts how the fire will spread over the next five minutes, and the drone follows that predicted edge on a GPS-bounded search for people. Anyone it finds becomes a rescue lead with a location-uncertainty estimate. I also loved building the replay mode: a simulated four-drone fleet that orbits the forecast fire boundary, where you can click into any drone's camera and telemetry. Getting real flight control, live detection and the spread model to agree in one loop was such a fun problem." },
+        { title: 'Scrollganize', tag: 'in progress', color: 'yellow', cover: 'assets/covers/scrollganize.jpg', link: 'https://github.com/richardlancs/Scrollganize',
+          text: "A Chrome side-panel extension for finding the TikToks you saved without scrolling through your whole Favorites tab forever. It syncs your Favorites and collections into a local library in the browser, then lets you search by caption, creator, hashtag or collection. You can stack categories like \"food\" and \"meal prep\", match All or Any, pull in related words, and every result can tell you why it matched. It's a TypeScript Manifest V3 extension, and your library never leaves your browser, which mattered a lot to us." },
+        { title: 'Peaceful Poker', tag: 'finished', color: 'green', cover: 'assets/covers/peaceful-poker.jpg', link: 'https://github.com/Infiniteiiii/Peaceful-Poker',
+          text: "A desktop app in Python and PySide6 for practicing No-Limit Hold'em decisions. You enter a hand and it evaluates your made hand and draws, works out exact runout odds, and estimates showdown equity, using exact enumeration when it can and Monte Carlo when the state space gets too big. It models how opponents might respond from their ranges, then compares every legal move by expected value, so you can see the actual math behind a fold, call or raise. I love that it shows its work instead of just telling you what to do." },
+        { title: 'Yours2Learn', tag: 'finished', color: 'green', cover: 'assets/covers/yours2learn.jpg', link: 'https://github.com/ferdinandzh4ng/Yours2Learn',
+          text: "Our uOttaHack project: a learning platform where AI builds each lesson, with separate agents on a Solace Agent Mesh writing the script, making slide images, narrating with ElevenLabs and generating quizzes. The coolest part is that it learns which models teach best. Students are split into groups that each get a different model combo (Gemini, GPT, Claude), and while they learn, a webcam vitals service estimates heart rate and tracks eye movement to measure attention and fatigue. That feedback goes back into picking the best combo for each topic and grade level next time." },
       ],
     },
     art: {
@@ -715,9 +719,8 @@
           const inner = `<img class="cover" src="${esc(it.cover)}" alt="" loading="lazy">
             <div class="body"><span class="t">${esc(it.title)}</span><span class="d">${esc(it.text)}</span>
             <span class="tag ${esc(it.color)}">${esc(it.tag)}</span></div>`;
-          return it.link ? `<a class="card" href="${esc(it.link)}">${inner}</a>` : `<div class="card">${inner}</div>`;
+          return it.link ? `<a class="card" href="${esc(it.link)}" target="_blank" rel="noopener">${inner}</a>` : `<div class="card">${inner}</div>`;
         }).join('')}
-        <div class="hint">+ add a project in CONTENT</div>
       </div>`;
     if (name === 'art') return `
       <div class="dbhead"><h3>↗ ˚‧ art</h3><span class="view">▤ board</span></div>
@@ -959,6 +962,6 @@
   route();
 })();
 </script>
-<script type="module" src="scene3d.js?v=34"></script>
+<script type="module" src="scene3d.js?v=35"></script>
 </body>
 </html>

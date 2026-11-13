@@ -1340,6 +1340,8 @@ function frame() {
   else composer.render();
   requestAnimationFrame(frame);
 }
+// compile every material now, in the background where the browser supports it, instead of on the first visible frame
+renderer.compileAsync?.(scene, camera).catch(() => {});
 requestAnimationFrame(frame);
 </script>
 </body>
