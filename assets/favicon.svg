@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <radialGradient id="body" cx="38%" cy="32%" r="78%">
+      <stop offset="0" stop-color="#FBE3E7"/>
+      <stop offset=".55" stop-color="#F1B9C4"/>
+      <stop offset="1" stop-color="#D98C9E"/>
+    </radialGradient>
+    <radialGradient id="shade" cx="50%" cy="100%" r="70%">
+      <stop offset="0" stop-color="#B8687D" stop-opacity=".45"/>
+      <stop offset="1" stop-color="#B8687D" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <!-- squishy cube: slightly puffed squircle -->
+  <path d="M32 5C47 5 56 6 58 12s2 11 2 20-.5 15-2 20-11 7-26 7S8 58 6 52s-2-11-2-20 .5-14 2-20S17 5 32 5z" fill="url(#body)"/>
+  <path d="M32 5C47 5 56 6 58 12s2 11 2 20-.5 15-2 20-11 7-26 7S8 58 6 52s-2-11-2-20 .5-14 2-20S17 5 32 5z" fill="url(#shade)"/>
+  <!-- glossy highlights -->
+  <ellipse cx="18" cy="16" rx="8" ry="4.5" transform="rotate(-28 18 16)" fill="#fff" opacity=".85"/>
+  <circle cx="51" cy="49" r="2.2" fill="#fff" opacity=".7"/>
+</svg>
