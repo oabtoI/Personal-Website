@@ -47,6 +47,14 @@
   .title{position:absolute;inset:0 0 0 46%;display:flex;flex-direction:column;align-items:center;justify-content:center;
          text-align:center;pointer-events:none;transform:translateX(calc(var(--pan,0) * 100vw))}
   @media (max-aspect-ratio:17/20){ .title{inset:56% 0 0 0;justify-content:flex-start} }
+  /* tall screens: the flower sits above the name, so fade the 3D scene out before it reaches the text
+     (the fade slides away with --pan, so the garden room is never cut) */
+  @media (max-aspect-ratio:17/20){
+    body:not(.sheet-open) .stage canvas{
+      -webkit-mask-image:linear-gradient(to bottom,#000 calc(46% + var(--pan,0) * 80%),transparent calc(55% + var(--pan,0) * 80%));
+              mask-image:linear-gradient(to bottom,#000 calc(46% + var(--pan,0) * 80%),transparent calc(55% + var(--pan,0) * 80%));
+    }
+  }
   .float{display:flex;flex-direction:column;align-items:center;gap:8px;
          animation:hover 7s cubic-bezier(0.45,0,0.55,1) infinite alternate;will-change:transform}
   @keyframes hover{from{transform:translateY(-4px)}to{transform:translateY(6px)}}
@@ -389,6 +397,11 @@
   "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
 } }
 </script>
+<!-- start the 3D downloads right away instead of after the page has been read -->
+<link rel="modulepreload" href="scene3d.js?v=36">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/postprocessing/UnrealBloomPass.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/postprocessing/EffectComposer.js">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><filter id="thin" x="-5%" y="-20%" width="110%" height="140%"><feMorphology id="thinM" operator="erode" radius="0.8"/></filter><filter id="paper" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feColorMatrix type="saturate" values="1.4"/><feColorMatrix type="matrix" values="1.65 0 0 0 0  0 1.65 0 0 0  0 0 1.65 0 0  1.2 1.3 1.2 0 0"/><feComponentTransfer><feFuncA type="gamma" amplitude="1" exponent="1.45" offset="0"/></feComponentTransfer></filter></svg>
@@ -992,6 +1005,6 @@
   route();
 })();
 </script>
-<script type="module" src="scene3d.js?v=35"></script>
+<script type="module" src="scene3d.js?v=36"></script>
 </body>
 </html>

@@ -36,7 +36,9 @@ const stage = document.getElementById('stage');
 let renderer;
 try { renderer = new THREE.WebGLRenderer({ antialias: true }); }
 catch (e) { document.body.classList.add('no-gl'); throw e; }
-renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));   // soft glowing glass doesn't need retina pixels; this is the biggest saving
+// phones: touch screens with a small side. They get fewer pixels and no automatic garden preload (see below)
+const PHONE = matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) < 700;
+renderer.setPixelRatio(Math.min(devicePixelRatio, PHONE ? 1.25 : 1.5));   // soft glowing glass doesn't need retina pixels; this is the biggest saving
 renderer.setSize(innerWidth, innerHeight);
 renderer.setClearColor(0x000000, 1);
 renderer.domElement.id = 'gl';
@@ -920,13 +922,14 @@ let sceneShown = false;
 if (initial === 'garden') loadGarden();
 else {
   const idle = window.requestIdleCallback || (f => setTimeout(f, 200));
-  addEventListener('scene-ready', () => setTimeout(() => idle(loadGarden, { timeout: 3000 }), 4500), { once: true });
+  // phones skip the automatic preload: building a second 3D scene there stalls the page; it loads on the first tap instead
+  if (!PHONE) addEventListener('scene-ready', () => setTimeout(() => idle(loadGarden, { timeout: 3000 }), 4500), { once: true });
   const way = document.querySelector('.explore');
   if (way) for (const ev of ['pointerenter', 'focus', 'touchstart']) way.addEventListener(ev, loadGarden, { once: true, passive: true });
 }
 addEventListener('room', e => { if (e.detail === 'garden') loadGarden(); });
 
-renderer.setAnimationLoop(() => {
+const frame = () => {
   const t = clock.getElapsedTime(), dt = t - lastT; lastT = t;
   updateButterfly(t, dt);
   if (!reduce) uTime.value = t;
@@ -1028,4 +1031,7 @@ renderer.setAnimationLoop(() => {
   if (!LIGHT.on) composer.render();
   else LIGHT.overlay.render(LIGHT.scene, camera);
   if (!sceneShown) { sceneShown = true; requestAnimationFrame(() => { document.body.classList.add('gl-ready'); dispatchEvent(new Event('scene-ready')); }); }
-});
+};
+// compile the shaders before the first frame, off the main thread where the browser allows it, so the page doesn't
+// freeze while the GPU builds them (this was most of the wait on phones)
+renderer.compileAsync(scene, camera).catch(() => {}).then(() => renderer.setAnimationLoop(frame));
