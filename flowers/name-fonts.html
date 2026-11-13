@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Name Card Fonts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Italiana&family=Space+Mono&family=Playfair+Display:ital,wght@0,400;1,400;1,500&family=Italianno&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;1,6..96,400;1,6..96,800&family=Parisienne&family=Instrument+Serif:ital@0;1&family=Mrs+Saint+Delafield&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #1b1416; --cream: #F3EDE1; --glow: 255,206,160; --rose: #D9A2AF; --mute: rgba(243,237,225,.55); }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--cream); }
+  body { font-family: system-ui, sans-serif; padding: 48px 24px 80px; }
+  header { max-width: 1120px; margin: 0 auto 32px; }
+  header h1 { font: 500 24px/32px system-ui, sans-serif; margin: 0 0 8px; }
+  header p { margin: 0; color: var(--mute); font-size: 16px; line-height: 24px; max-width: 640px; }
+  .grid { max-width: 1120px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 520px), 1fr)); gap: 24px; }
+  .card { position: relative; border: 1px solid rgba(243,237,225,.14); border-radius: 12px; padding: 24px; min-height: 340px; overflow: hidden;
+    background: radial-gradient(120% 90% at 70% 30%, rgba(var(--glow), .07), transparent 60%), var(--bg); display: flex; flex-direction: column; }
+  .tag { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; font: 500 12px/16px system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: var(--mute); }
+  .tag b { color: var(--cream); font-weight: 500; }
+  .stage { flex: 1; display: grid; place-items: center; padding: 16px 0; }
+  .fonts { font: 400 13px/20px system-ui, sans-serif; color: var(--mute); }
+  .links { display: flex; flex-wrap: wrap; gap: 4px 16px; justify-content: center; margin-top: 16px; }
+  .glow { text-shadow: 0 0 22px rgba(var(--glow), .4), 0 0 2px rgba(var(--glow), .5); }
+  .rose { color: var(--rose); }
+
+  /* A · Pinyon Script + Cormorant Garamond */
+  .a .name { position: relative; text-align: center; line-height: 1; }
+  .a .sw { font: 400 168px/1 "Pinyon Script", cursive; position: absolute; left: -58px; top: -46px; opacity: .9; }
+  .a .first { font: italic 400 76px/1 "Cormorant Garamond", serif; padding-left: 44px; }
+  .a .last { display: block; font: 500 22px/1 "Cormorant Garamond", serif; letter-spacing: .6em; text-transform: uppercase; margin-top: 12px; padding-left: 120px; }
+  .a .links { font: italic 400 17px/24px "Cormorant Garamond", serif; }
+
+  /* B · Italiana + Space Mono */
+  .b .stage > div { width: 100%; }
+  .b .top { font: 400 11px/1 "Space Mono", monospace; letter-spacing: .2em; text-transform: uppercase; display: flex; justify-content: space-between; color: var(--mute); }
+  .b .big { font: 400 104px/1 Italiana, serif; text-align: center; margin: 14px 0 6px; letter-spacing: -.01em; }
+  .b .big .rose { margin-left: .18em; }
+  .b .mono { font: 400 11px/16px "Space Mono", monospace; letter-spacing: .14em; text-transform: uppercase; color: var(--mute); display: flex; justify-content: space-between; }
+  .b .links { font: 400 12px/20px "Space Mono", monospace; letter-spacing: .14em; text-transform: uppercase; }
+
+  /* C · Playfair Display + Italianno */
+  .c .name { text-align: center; }
+  .c .first { font: 400 60px/1 "Playfair Display", serif; letter-spacing: .14em; text-transform: uppercase; }
+  .c .first .ini { font: 400 150px/0 Italianno, cursive; vertical-align: -.2em; margin-right: -2px; letter-spacing: 0; text-transform: none; }
+  .c .last { font: italic 400 80px/1 "Playfair Display", serif; margin-top: -2px; }
+  .c .links { font: italic 400 17px/24px "Playfair Display", serif; }
+
+  /* D · Bodoni Moda + Parisienne */
+  .d .name { position: relative; text-align: center; }
+  .d .cap { display: block; font: 400 12px/16px "Bodoni Moda", serif; letter-spacing: .4em; text-transform: uppercase; color: var(--mute); margin-bottom: 8px; }
+  .d .first { font: italic 800 92px/1 "Bodoni Moda", serif; letter-spacing: -.02em; }
+  .d .last { position: absolute; right: -6px; bottom: -40px; font: 400 92px/1 Parisienne, cursive; transform: rotate(-8deg); }
+  .d .links { font: italic 400 16px/24px "Bodoni Moda", serif; margin-top: 48px; }
+
+  /* E · Instrument Serif + Mrs Saint Delafield */
+  .e .name { position: relative; text-align: center; line-height: .9; }
+  .e .first { font: italic 400 100px/.9 "Instrument Serif", serif; }
+  .e .last { font: 400 46px/1 "Instrument Serif", serif; letter-spacing: .5em; text-transform: uppercase; padding-left: .5em; margin-top: 10px; }
+  .e .sw { position: absolute; left: 50%; top: 40px; transform: translateX(-12%); font: 400 120px/1 "Mrs Saint Delafield", cursive; opacity: .9; pointer-events: none; }
+  .e .links { font: italic 400 18px/28px "Instrument Serif", serif; }
+
+  /* F · Cormorant Garamond + Space Mono (specimen label, matches the holographic flower) */
+  .f .stage > div { width: 100%; }
+  .f .row { display: flex; justify-content: space-between; font: 400 10px/16px "Space Mono", monospace; letter-spacing: .16em; text-transform: uppercase; color: var(--mute); }
+  .f .name { text-align: center; margin: 12px 0; line-height: .95; }
+  .f .first { font: italic 400 96px/.95 "Cormorant Garamond", serif; }
+  .f .last { font: 500 96px/.95 "Cormorant Garamond", serif; letter-spacing: .02em; }
+  .f .rule { border-top: 1px solid rgba(243,237,225,.28); margin: 10px 0 0; }
+  .f .links { font: 400 11px/20px "Space Mono", monospace; letter-spacing: .14em; text-transform: uppercase; }
+
+  @media (max-width: 600px) {
+    body { padding: 32px 16px 64px; }
+    .card { padding: 16px; min-height: 300px; }
+    .stage { transform: scale(.72); }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Name card font options · two fonts each</h1>
+  <p>Each option pairs exactly two typefaces: one expressive, one structured. Pick a letter.</p>
+</header>
+<main class="grid">
+
+  <section class="card a">
+    <div class="tag"><b>A · Swash &amp; serif</b><span>soft, romantic</span></div>
+    <div class="stage"><div>
+      <div class="name glow"><span class="sw rose">A</span><span class="first">rianna</span><span class="last">Liu</span></div>
+      <div class="links"><span>me / projects / art</span><span>github · linkedin · email</span></div>
+    </div></div>
+    <div class="fonts">Pinyon Script + Cormorant Garamond</div>
+  </section>
+
+  <section class="card b">
+    <div class="tag"><b>B · Thin display + mono</b><span>airy, zine</span></div>
+    <div class="stage"><div>
+      <div class="top"><span>its</span><span>already</span><span>the</span><span>garden</span></div>
+      <div class="big glow">Arianna<span class="rose">Liu</span></div>
+      <div class="mono"><span>specimen 00</span><span>art · projects · me</span><span>2026</span></div>
+      <div class="links"><span>me / projects / art</span><span>github · linkedin · email</span></div>
+    </div></div>
+    <div class="fonts">Italiana + Space Mono</div>
+  </section>
+
+  <section class="card c">
+    <div class="tag"><b>C · Echo editorial</b><span>dramatic, poster</span></div>
+    <div class="stage"><div>
+      <div class="name glow"><div class="first"><span class="ini rose">A</span>rianna</div><div class="last">Liu</div></div>
+      <div class="links"><span>me / projects / art</span><span>github · linkedin · email</span></div>
+    </div></div>
+    <div class="fonts">Playfair Display + Italianno</div>
+  </section>
+
+  <section class="card d">
+    <div class="tag"><b>D · Bodoni &amp; script</b><span>bold, fashion</span></div>
+    <div class="stage"><div>
+      <div class="name glow"><span class="cap">the garden of</span><div class="first">Arianna</div><div class="last rose">Liu</div></div>
+      <div class="links"><span>me / projects / art</span><span>github · linkedin · email</span></div>
+    </div></div>
+    <div class="fonts">Bodoni Moda + Parisienne</div>
+  </section>
+
+  <section class="card e">
+    <div class="tag"><b>E · Serif &amp; signature</b><span>contemporary, personal</span></div>
+    <div class="stage"><div>
+      <div class="name glow"><div class="first">arianna</div><div class="last">Liu</div><span class="sw rose">Liu</span></div>
+      <div class="links"><span>me / projects / art</span><span>github · linkedin · email</span></div>
+    </div></div>
+    <div class="fonts">Instrument Serif + Mrs Saint Delafield</div>
+  </section>
+
+  <section class="card f">
+    <div class="tag"><b>F · Specimen label</b><span>technical, matches the flower</span></div>
+    <div class="stage"><div>
+      <div class="row"><span>specimen 00</span><span>holographic hybrid</span></div>
+      <div class="name glow"><span class="first">Arianna </span><span class="last">Liu</span></div>
+      <div class="row"><span>fig. 01</span><span>art / projects / me</span></div>
+      <div class="rule"></div>
+      <div class="links"><span>github</span><span>linkedin</span><span>email</span></div>
+    </div></div>
+    <div class="fonts">Cormorant Garamond + Space Mono</div>
+  </section>
+
+</main>
+</body>
+</html>

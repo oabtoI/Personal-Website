@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Three Flowers</title>
+<link rel="stylesheet" href="flora.css">
+</head>
+<body>
+<canvas id="c" aria-label="A glass rose, lily and camellia standing side by side in a light breeze. Touch a petal or leaf and it lifts."></canvas>
+<nav class="ideas"><a href="1-bouquet.html">1 · bouquet</a><a href="2-trio.html" aria-current="page">2 · side by side</a><a href="3-unravel.html">3 · unravel</a></nav>
+<p class="hint" id="hint">touch a petal or a leaf</p>
+<script src="garden.js"></script>
+<script src="scenes.js"></script>
+<script>
+  const g = GlassGarden(document.getElementById('c'));
+  Scenes.loadFlowers(g).then(F => {
+    g.onresize = (W, H) => { const G = Scenes.placeGarden(W, H); for (const n of Scenes.NAMES) Object.assign(F[n], G[n]); };
+    g.onresize(g.width, g.height);
+  });
+  addEventListener('pointermove', () => document.getElementById('hint').style.opacity = 0, { once: true });
+</script>
+</body>
+</html>

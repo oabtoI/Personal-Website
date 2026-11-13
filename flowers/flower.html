@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Glass Flower</title>
+<link rel="stylesheet" href="flora.css?v=5">
+<style>.hint{ top:22px; bottom:auto }</style>
+</head>
+<body>
+<canvas id="c" aria-label="A glass flower moving in a light breeze. Touch a petal or leaf and it lifts."></canvas>
+<p class="hint" id="hint">touch a petal or a leaf</p>
+<script src="garden.js?v=5"></script>
+<script src="light.js?v=5"></script>
+<script>
+  const g = GlassGarden(document.getElementById('c'));
+  GardenLight(g);
+  fetch((new URLSearchParams(location.search).get('f') || 'lily') + '/rig.json').then(r => r.json()).then(rig => {
+    const f = g.add(rig);
+    g.onresize = (W, H) => { const h = Math.min(H * .9, W * 1.25); Object.assign(f, { h, x: W / 2, y: H - (H - h) / 2 }); };
+    g.onresize(g.width, g.height);
+  });
+  addEventListener('pointermove', () => document.getElementById('hint').style.opacity = 0, { once: true });
+</script>
+</body>
+</html>

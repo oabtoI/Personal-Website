@@ -1,0 +1,263 @@
+{
+ "h": 1536,
+ "cx": 505,
+ "bottom": 1525,
+ "parts": [
+  {
+   "id": "frontL",
+   "kind": "petal",
+   "z": 9,
+   "parent": "base",
+   "pivot": [
+    500.0,
+    560.0
+   ],
+   "src": "camellia/frontL.webp",
+   "cx": 251.0,
+   "cy": 161.0,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 362.0,
+   "y": 563.0,
+   "tip": [
+    170.0,
+    720.0
+   ],
+   "liftDir": 1,
+   "liftTurn": 7,
+   "breath": 0.5
+  },
+  {
+   "id": "right",
+   "kind": "petal",
+   "z": 8.5,
+   "parent": "base",
+   "pivot": [
+    560.0,
+    470.0
+   ],
+   "src": "camellia/right.webp",
+   "cx": 245.0,
+   "cy": 190.0,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 765.0,
+   "y": 458.0,
+   "tip": [
+    1000.0,
+    420.0
+   ],
+   "liftDir": -1,
+   "liftTurn": 7,
+   "breath": 0.5
+  },
+  {
+   "id": "stamen",
+   "kind": "center",
+   "z": 8,
+   "parent": "base",
+   "pivot": [
+    500.0,
+    460.0
+   ],
+   "src": "camellia/stamen.webp",
+   "cx": 175.0,
+   "cy": 125.5,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 500.0,
+   "y": 347.5
+  },
+  {
+   "id": "base",
+   "kind": "center",
+   "z": 7,
+   "parent": "stemA",
+   "pivot": [
+    505.0,
+    690.0
+   ],
+   "src": "camellia/base.webp",
+   "cx": 97.0,
+   "cy": 56.5,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 516.0,
+   "y": 656.5
+  },
+  {
+   "id": "top",
+   "kind": "petal",
+   "z": 6,
+   "parent": "base",
+   "pivot": [
+    500.0,
+    420.0
+   ],
+   "src": "camellia/top.webp",
+   "cx": 245.0,
+   "cy": 243.5,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 611.0,
+   "y": 253.5,
+   "tip": [
+    720.0,
+    20.0
+   ],
+   "liftDir": 1,
+   "liftTurn": 3.5,
+   "breath": 0.5
+  },
+  {
+   "id": "left",
+   "kind": "petal",
+   "z": 5,
+   "parent": "base",
+   "pivot": [
+    420.0,
+    400.0
+   ],
+   "src": "camellia/left.webp",
+   "cx": 183.0,
+   "cy": 182.0,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 198.0,
+   "y": 338.0,
+   "tip": [
+    30.0,
+    400.0
+   ],
+   "liftDir": 1,
+   "liftTurn": 7,
+   "breath": 0.5
+  },
+  {
+   "id": "stemA",
+   "kind": "stem",
+   "z": 2.2,
+   "parent": "stemB",
+   "pivot": [
+    482.0,
+    962.0
+   ],
+   "src": "camellia/stemA.webp",
+   "cx": 72.5,
+   "cy": 154.5,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 527.5,
+   "y": 814.5
+  },
+  {
+   "id": "stemB",
+   "kind": "stem",
+   "z": 2.1,
+   "parent": "stemC",
+   "pivot": [
+    446.0,
+    1300.0
+   ],
+   "src": "camellia/stemB.webp",
+   "cx": 52.0,
+   "cy": 171.0,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 459.0,
+   "y": 1133.0
+  },
+  {
+   "id": "stemC",
+   "kind": "stem",
+   "z": 2.0,
+   "parent": null,
+   "pivot": [
+    488.0,
+    1525.0
+   ],
+   "src": "camellia/stemC.webp",
+   "cx": 42.5,
+   "cy": 116.5,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 466.5,
+   "y": 1409.5
+  },
+  {
+   "id": "leafR",
+   "kind": "leaf",
+   "z": 2.5,
+   "parent": "stemA",
+   "pivot": [
+    506.0,
+    998.0
+   ],
+   "src": "camellia/leafR.webp",
+   "cx": 239.0,
+   "cy": 169.5,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 745.0,
+   "y": 841.5,
+   "tip": [
+    985.0,
+    700.0
+   ]
+  },
+  {
+   "id": "leafS",
+   "kind": "leaf",
+   "z": 2.5,
+   "parent": "stemB",
+   "pivot": [
+    468.0,
+    1282.0
+   ],
+   "src": "camellia/leafS.webp",
+   "cx": 155.5,
+   "cy": 114.5,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 615.5,
+   "y": 1183.5,
+   "tip": [
+    770.0,
+    1135.0
+   ]
+  },
+  {
+   "id": "leafL",
+   "kind": "leaf",
+   "z": 1,
+   "parent": "stemB",
+   "pivot": [
+    410.0,
+    1150.0
+   ],
+   "src": "camellia/leafL.webp",
+   "cx": 209.5,
+   "cy": 204.0,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 237.5,
+   "y": 983.0,
+   "tip": [
+    30.0,
+    812.0
+   ]
+  }
+ ]
+}

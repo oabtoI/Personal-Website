@@ -1,0 +1,51 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "site",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8765"
+      ],
+      "port": 8765
+    },
+    {
+      "name": "liquid-name",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8766",
+        "--directory",
+        "/Users/oabto/Desktop/liquid-name"
+      ],
+      "port": 8766
+    },
+    {
+      "name": "site-alt",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8767",
+        "--directory",
+        "/Users/oabto/Desktop/personal website"
+      ],
+      "port": 8767
+    },
+    {
+      "name": "light-flowers",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8768",
+        "--directory",
+        "/Users/oabto/Desktop/light-flowers"
+      ],
+      "port": 8768
+    }
+  ]
+}

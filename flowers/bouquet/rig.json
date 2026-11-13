@@ -1,0 +1,583 @@
+{
+ "h": 1536,
+ "cx": 500,
+ "bottom": 1508,
+ "parts": [
+  {
+   "id": "bundle",
+   "kind": "stem",
+   "z": 3.0,
+   "parent": null,
+   "pivot": [
+    455.0,
+    1505.0
+   ],
+   "src": "bouquet/bundle.webp",
+   "cx": 63.0,
+   "cy": 221.5,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 462.0,
+   "y": 1299.5
+  },
+  {
+   "id": "stemRose",
+   "kind": "stem",
+   "z": 3.1,
+   "parent": "bundle",
+   "pivot": [
+    440.0,
+    1090.0
+   ],
+   "src": "bouquet/stemRose.webp",
+   "cx": 86.0,
+   "cy": 192.0,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 387.0,
+   "y": 892.0
+  },
+  {
+   "id": "stemLily",
+   "kind": "stem",
+   "z": 3.2,
+   "parent": "bundle",
+   "pivot": [
+    462.0,
+    1090.0
+   ],
+   "src": "bouquet/stemLily.webp",
+   "cx": 114.5,
+   "cy": 333.5,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 514.5,
+   "y": 751.5
+  },
+  {
+   "id": "stemCam",
+   "kind": "stem",
+   "z": 3.3,
+   "parent": "bundle",
+   "pivot": [
+    486.0,
+    1090.0
+   ],
+   "src": "bouquet/stemCam.webp",
+   "cx": 89.5,
+   "cy": 113.5,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 557.5,
+   "y": 973.5
+  },
+  {
+   "id": "leafRose",
+   "kind": "leaf",
+   "z": 2.5,
+   "parent": "stemRose",
+   "pivot": [
+    396.0,
+    984.0
+   ],
+   "src": "bouquet/leafRose.webp",
+   "cx": 175.0,
+   "cy": 147.5,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 250.0,
+   "y": 915.5,
+   "tip": [
+    70.0,
+    830.0
+   ]
+  },
+  {
+   "id": "leafLowL",
+   "kind": "leaf",
+   "z": 2.6,
+   "parent": "bundle",
+   "pivot": [
+    422.0,
+    1182.0
+   ],
+   "src": "bouquet/leafLowL.webp",
+   "cx": 151.0,
+   "cy": 74.5,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 280.0,
+   "y": 1150.5,
+   "tip": [
+    128.0,
+    1222.0
+   ]
+  },
+  {
+   "id": "leafMid",
+   "kind": "leaf",
+   "z": 2.7,
+   "parent": "stemCam",
+   "pivot": [
+    526.0,
+    962.0
+   ],
+   "src": "bouquet/leafMid.webp",
+   "cx": 40.0,
+   "cy": 72.0,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 500.0,
+   "y": 895.0,
+   "tip": [
+    462.0,
+    822.0
+   ]
+  },
+  {
+   "id": "leafR",
+   "kind": "leaf",
+   "z": 2.8,
+   "parent": "bundle",
+   "pivot": [
+    514.0,
+    1226.0
+   ],
+   "src": "bouquet/leafR.webp",
+   "cx": 189.5,
+   "cy": 132.5,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 697.5,
+   "y": 1100.5,
+   "tip": [
+    884.0,
+    1084.0
+   ]
+  },
+  {
+   "id": "roseLow",
+   "kind": "petal",
+   "z": 9,
+   "parent": "roseHead",
+   "pivot": [
+    330.0,
+    740.0
+   ],
+   "src": "bouquet/roseLow.webp",
+   "cx": 168.0,
+   "cy": 84.5,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 199.0,
+   "y": 702.5,
+   "tip": [
+    40.0,
+    700.0
+   ],
+   "liftDir": 1,
+   "liftTurn": 4,
+   "breath": 0.5
+  },
+  {
+   "id": "roseCenter",
+   "kind": "petal",
+   "z": 8,
+   "parent": "roseHead",
+   "pivot": [
+    330.0,
+    700.0
+   ],
+   "src": "bouquet/roseCenter.webp",
+   "cx": 172.5,
+   "cy": 180.5,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 290.5,
+   "y": 542.5,
+   "tip": [
+    300.0,
+    380.0
+   ],
+   "liftDir": 1,
+   "liftTurn": 2.5,
+   "breath": 0.5
+  },
+  {
+   "id": "roseRight",
+   "kind": "petal",
+   "z": 7,
+   "parent": "roseHead",
+   "pivot": [
+    380.0,
+    690.0
+   ],
+   "src": "bouquet/roseRight.webp",
+   "cx": 81.5,
+   "cy": 153.5,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 451.5,
+   "y": 551.5,
+   "tip": [
+    515.0,
+    470.0
+   ],
+   "liftDir": -1,
+   "liftTurn": 4,
+   "breath": 0.5
+  },
+  {
+   "id": "roseLeft",
+   "kind": "petal",
+   "z": 6,
+   "parent": "roseHead",
+   "pivot": [
+    200.0,
+    650.0
+   ],
+   "src": "bouquet/roseLeft.webp",
+   "cx": 90.0,
+   "cy": 160.0,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 106.0,
+   "y": 564.0,
+   "tip": [
+    25.0,
+    560.0
+   ],
+   "liftDir": 1,
+   "liftTurn": 4,
+   "breath": 0.5
+  },
+  {
+   "id": "lilyFront",
+   "kind": "petal",
+   "z": 9,
+   "parent": "lilyHead",
+   "pivot": [
+    600.0,
+    440.0
+   ],
+   "src": "bouquet/lilyFront.webp",
+   "cx": 143.0,
+   "cy": 129.5,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 731.0,
+   "y": 457.5,
+   "tip": [
+    795.0,
+    585.0
+   ],
+   "liftDir": -1,
+   "liftTurn": 7,
+   "breath": 0.5
+  },
+  {
+   "id": "lilyStamen",
+   "kind": "center",
+   "z": 8.5,
+   "parent": "lilyHead",
+   "pivot": [
+    600.0,
+    400.0
+   ],
+   "src": "bouquet/lilyStamen.webp",
+   "cx": 82.5,
+   "cy": 86.5,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 666.5,
+   "y": 262.5
+  },
+  {
+   "id": "lilyLowL",
+   "kind": "petal",
+   "z": 8,
+   "parent": "lilyHead",
+   "pivot": [
+    580.0,
+    420.0
+   ],
+   "src": "bouquet/lilyLowL.webp",
+   "cx": 109.0,
+   "cy": 80.0,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 504.0,
+   "y": 363.0,
+   "tip": [
+    410.0,
+    410.0
+   ],
+   "liftDir": 1,
+   "liftTurn": 7,
+   "breath": 0.5
+  },
+  {
+   "id": "lilyLeft",
+   "kind": "petal",
+   "z": 7,
+   "parent": "lilyHead",
+   "pivot": [
+    570.0,
+    380.0
+   ],
+   "src": "bouquet/lilyLeft.webp",
+   "cx": 154.0,
+   "cy": 108.5,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 411.0,
+   "y": 244.5,
+   "tip": [
+    270.0,
+    270.0
+   ],
+   "liftDir": -1,
+   "liftTurn": 7,
+   "breath": 0.5
+  },
+  {
+   "id": "lilyRight",
+   "kind": "petal",
+   "z": 6.5,
+   "parent": "lilyHead",
+   "pivot": [
+    640.0,
+    380.0
+   ],
+   "src": "bouquet/lilyRight.webp",
+   "cx": 166.5,
+   "cy": 116.5,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 822.5,
+   "y": 364.5,
+   "tip": [
+    950.0,
+    440.0
+   ],
+   "liftDir": -1,
+   "liftTurn": 7,
+   "breath": 0.5
+  },
+  {
+   "id": "lilyTop",
+   "kind": "petal",
+   "z": 6,
+   "parent": "lilyHead",
+   "pivot": [
+    590.0,
+    400.0
+   ],
+   "src": "bouquet/lilyTop.webp",
+   "cx": 139.5,
+   "cy": 189.5,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 551.5,
+   "y": 213.5,
+   "tip": [
+    430.0,
+    90.0
+   ],
+   "liftDir": -1,
+   "liftTurn": 5,
+   "breath": 0.5
+  },
+  {
+   "id": "lilyUpR",
+   "kind": "petal",
+   "z": 5,
+   "parent": "lilyHead",
+   "pivot": [
+    640.0,
+    340.0
+   ],
+   "src": "bouquet/lilyUpR.webp",
+   "cx": 136.5,
+   "cy": 104.0,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 772.5,
+   "y": 187.0,
+   "tip": [
+    890.0,
+    160.0
+   ],
+   "liftDir": 1,
+   "liftTurn": 7,
+   "breath": 0.5
+  },
+  {
+   "id": "camFront",
+   "kind": "petal",
+   "z": 9,
+   "parent": "camHead",
+   "pivot": [
+    620.0,
+    880.0
+   ],
+   "src": "bouquet/camFront.webp",
+   "cx": 192.5,
+   "cy": 104.0,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 790.5,
+   "y": 892.0,
+   "tip": [
+    960.0,
+    930.0
+   ],
+   "liftDir": -1,
+   "liftTurn": 7,
+   "breath": 0.5
+  },
+  {
+   "id": "camStamen",
+   "kind": "center",
+   "z": 8,
+   "parent": "camHead",
+   "pivot": [
+    640.0,
+    860.0
+   ],
+   "src": "bouquet/camStamen.webp",
+   "cx": 78.5,
+   "cy": 93.5,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 726.5,
+   "y": 749.5
+  },
+  {
+   "id": "camLeft",
+   "kind": "petal",
+   "z": 7,
+   "parent": "camHead",
+   "pivot": [
+    600.0,
+    880.0
+   ],
+   "src": "bouquet/camLeft.webp",
+   "cx": 115.0,
+   "cy": 154.5,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 538.0,
+   "y": 726.5,
+   "tip": [
+    430.0,
+    690.0
+   ],
+   "liftDir": 1,
+   "liftTurn": 7,
+   "breath": 0.5
+  },
+  {
+   "id": "camRight",
+   "kind": "petal",
+   "z": 6.5,
+   "parent": "camHead",
+   "pivot": [
+    680.0,
+    800.0
+   ],
+   "src": "bouquet/camRight.webp",
+   "cx": 116.0,
+   "cy": 116.5,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 872.0,
+   "y": 718.5,
+   "tip": [
+    980.0,
+    720.0
+   ],
+   "liftDir": -1,
+   "liftTurn": 7,
+   "breath": 0.5
+  },
+  {
+   "id": "camTop",
+   "kind": "petal",
+   "z": 6,
+   "parent": "camHead",
+   "pivot": [
+    640.0,
+    800.0
+   ],
+   "src": "bouquet/camTop.webp",
+   "cx": 106.5,
+   "cy": 152.5,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 676.5,
+   "y": 690.5,
+   "tip": [
+    700.0,
+    545.0
+   ],
+   "liftDir": 1,
+   "liftTurn": 4,
+   "breath": 0.5
+  },
+  {
+   "id": "roseHead",
+   "kind": "head",
+   "z": 0,
+   "parent": "stemRose",
+   "pivot": [
+    350,
+    780
+   ]
+  },
+  {
+   "id": "lilyHead",
+   "kind": "head",
+   "z": 0,
+   "parent": "stemLily",
+   "pivot": [
+    580,
+    470
+   ]
+  },
+  {
+   "id": "camHead",
+   "kind": "head",
+   "z": 0,
+   "parent": "stemCam",
+   "pivot": [
+    590,
+    900
+   ]
+  }
+ ]
+}

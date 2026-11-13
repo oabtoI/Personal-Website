@@ -1,0 +1,12 @@
+# Not part of the live site
+.claude
+.DS_Store
+
+# Old video copies the site no longer uses (it plays lotus-pond-intro.mp4 and lotus-bloom-small.mp4)
+assets/lotus-pond.mp4
+assets/lotus-pond-small.mp4
+assets/lotus-bloom.mp4
+
+# Vercel sign-in token and project link (never publish)
+.env*
+.vercel

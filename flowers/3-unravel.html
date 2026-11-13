@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bouquet Unravels</title>
+<link rel="stylesheet" href="flora.css">
+<style>
+  .toggle{ position:fixed; left:50%; bottom:26px; transform:translateX(-50%); z-index:3;
+    font:500 15px/1 'Source Serif 4', Georgia, serif; letter-spacing:.02em; color:#FFF8F2;
+    background:var(--rose); border:0; border-radius:999px; padding:13px 24px 14px; cursor:pointer;
+    box-shadow:0 6px 20px rgba(198,127,135,.28); transition:transform .25s, box-shadow .25s, background .25s, opacity .25s }
+  .toggle:hover{ transform:translateX(-50%) translateY(-2px); box-shadow:0 10px 26px rgba(198,127,135,.34); background:#BE737C }
+  .toggle:focus-visible{ outline:2px solid var(--ink); outline-offset:3px }
+  .toggle:disabled{ opacity:.55; cursor:default }
+  .toggle span{ display:inline-block; transition:opacity .25s }
+</style>
+</head>
+<body>
+<canvas id="c" aria-label="A glass bouquet that unties into a rose, a lily and a camellia standing side by side."></canvas>
+<nav class="ideas"><a href="1-bouquet.html">1 · bouquet</a><a href="2-trio.html">2 · side by side</a><a href="3-unravel.html" aria-current="page">3 · unravel</a></nav>
+<button class="toggle" id="toggle" aria-pressed="false" disabled><span>view the garden</span></button>
+<script src="garden.js"></script>
+<script src="scenes.js"></script>
+<script>
+  const g = GlassGarden(document.getElementById('c'));
+  const btn = document.getElementById('toggle'), label = btn.firstElementChild;
+  const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  const sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  let k = 0, target = 0, F = null, B = null, home = null, garden = null;
+  const D = 2.2, lag = .12;                 // seconds for the whole change; each flower starts a beat after the last
+  const order = ['camellia', 'rose', 'lily'];
+  function place() {
+    if (!F || !home) return;
+    B.opacity = 1 - sm(0, .2, k);            // the bouquet hands over to the three single flowers
+    order.forEach((n, i) => {
+      const e = ease(Math.min(1, Math.max(0, (k - i * lag) / (1 - 2 * lag))));
+      const a = home[n], b = garden[n], f = F[n];
+      f.x = a.x + (b.x - a.x) * e;
+      f.y = a.y + (b.y - a.y) * e - Math.sin(Math.PI * e) * b.h * .04;      // a little lift on the way
+      f.h = a.h + (b.h - a.h) * e;
+      f.rot = a.rot + (b.rot - a.rot) * e;
+      f.opacity = sm(0, .16, k);
+    });
+  }
+  Promise.all([Scenes.loadBouquet(g), Scenes.loadFlowers(g, { hidden: true })]).then(([b, fl]) => {
+    B = b; F = fl;
+    g.onresize = (W, H) => {
+      Object.assign(B, Scenes.placeBouquet(W, H));
+      home = Scenes.placeInBouquet(g, F, B); garden = Scenes.placeGarden(W, H); place();
+    };
+    g.onresize(g.width, g.height);
+    Promise.all([B, ...Object.values(F)].map(f => f.ready)).then(() => btn.disabled = false);
+  });
+  g.onframe = dt => {
+    if (k === target) return;
+    k += Math.sign(target - k) * dt / D; k = target ? Math.min(k, 1) : Math.max(k, 0); place();
+  };
+  btn.addEventListener('click', () => {
+    target = target ? 0 : 1;
+    btn.setAttribute('aria-pressed', target ? 'true' : 'false');
+    label.style.opacity = 0;
+    setTimeout(() => { label.textContent = target ? 'home' : 'view the garden'; label.style.opacity = 1; }, 220);
+  });
+</script>
+</body>
+</html>

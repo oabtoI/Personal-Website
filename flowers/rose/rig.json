@@ -1,0 +1,383 @@
+{
+ "h": 1536,
+ "cx": 512,
+ "bottom": 1515,
+ "parts": [
+  {
+   "id": "lip",
+   "kind": "petal",
+   "z": 9,
+   "parent": "head",
+   "pivot": [
+    480.0,
+    560.0
+   ],
+   "src": "rose/lip.webp",
+   "cx": 243.5,
+   "cy": 110.5,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 493.5,
+   "y": 482.5,
+   "tip": [
+    730.0,
+    390.0
+   ],
+   "liftDir": -1,
+   "liftTurn": 3,
+   "breath": 0.45
+  },
+  {
+   "id": "lowL",
+   "kind": "petal",
+   "z": 8.6,
+   "parent": "head",
+   "pivot": [
+    480.0,
+    600.0
+   ],
+   "src": "rose/lowL.webp",
+   "cx": 173.0,
+   "cy": 124.0,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 313.0,
+   "y": 652.0,
+   "tip": [
+    160.0,
+    765.0
+   ],
+   "liftDir": 1,
+   "liftTurn": 6,
+   "breath": 0.45
+  },
+  {
+   "id": "midL",
+   "kind": "petal",
+   "z": 8.4,
+   "parent": "head",
+   "pivot": [
+    300.0,
+    520.0
+   ],
+   "src": "rose/midL.webp",
+   "cx": 135.5,
+   "cy": 120.5,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 165.5,
+   "y": 478.5,
+   "tip": [
+    40.0,
+    480.0
+   ],
+   "liftDir": 1,
+   "liftTurn": 6,
+   "breath": 0.45
+  },
+  {
+   "id": "lowR",
+   "kind": "petal",
+   "z": 8.2,
+   "parent": "head",
+   "pivot": [
+    560.0,
+    585.0
+   ],
+   "src": "rose/lowR.webp",
+   "cx": 216.0,
+   "cy": 95.0,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 746.0,
+   "y": 569.0,
+   "tip": [
+    955.0,
+    620.0
+   ],
+   "liftDir": -1,
+   "liftTurn": 6,
+   "breath": 0.45
+  },
+  {
+   "id": "cupFront",
+   "kind": "petal",
+   "z": 7.6,
+   "parent": "head",
+   "pivot": [
+    480.0,
+    420.0
+   ],
+   "src": "rose/cupFront.webp",
+   "cx": 235.0,
+   "cy": 93.0,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 471.0,
+   "y": 383.0,
+   "tip": [
+    660.0,
+    300.0
+   ],
+   "liftDir": -1,
+   "liftTurn": 3,
+   "breath": 0.45
+  },
+  {
+   "id": "stamen",
+   "kind": "center",
+   "z": 7.4,
+   "parent": "head",
+   "pivot": [
+    480.0,
+    350.0
+   ],
+   "src": "rose/stamen.webp",
+   "cx": 81.5,
+   "cy": 71.5,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 477.5,
+   "y": 285.5
+  },
+  {
+   "id": "cupLeft",
+   "kind": "petal",
+   "z": 7.2,
+   "parent": "head",
+   "pivot": [
+    320.0,
+    400.0
+   ],
+   "src": "rose/cupLeft.webp",
+   "cx": 95.5,
+   "cy": 131.0,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 307.5,
+   "y": 299.0,
+   "tip": [
+    240.0,
+    220.0
+   ],
+   "liftDir": -1,
+   "liftTurn": 4,
+   "breath": 0.45
+  },
+  {
+   "id": "cupBack",
+   "kind": "petal",
+   "z": 7.0,
+   "parent": "head",
+   "pivot": [
+    500.0,
+    320.0
+   ],
+   "src": "rose/cupBack.webp",
+   "cx": 204.5,
+   "cy": 157.0,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 476.5,
+   "y": 208.0,
+   "tip": [
+    500.0,
+    80.0
+   ],
+   "liftDir": 1,
+   "liftTurn": 3,
+   "breath": 0.45
+  },
+  {
+   "id": "tallBack",
+   "kind": "petal",
+   "z": 6.8,
+   "parent": "head",
+   "pivot": [
+    620.0,
+    380.0
+   ],
+   "src": "rose/tallBack.webp",
+   "cx": 147.5,
+   "cy": 192.0,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 635.5,
+   "y": 198.0,
+   "tip": [
+    700.0,
+    20.0
+   ],
+   "liftDir": 1,
+   "liftTurn": 6,
+   "breath": 0.45
+  },
+  {
+   "id": "upR",
+   "kind": "petal",
+   "z": 6.6,
+   "parent": "head",
+   "pivot": [
+    700.0,
+    400.0
+   ],
+   "src": "rose/upR.webp",
+   "cx": 176.0,
+   "cy": 174.0,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 816.0,
+   "y": 342.0,
+   "tip": [
+    985.0,
+    230.0
+   ],
+   "liftDir": 1,
+   "liftTurn": 6,
+   "breath": 0.45
+  },
+  {
+   "id": "upL",
+   "kind": "petal",
+   "z": 6.4,
+   "parent": "head",
+   "pivot": [
+    330.0,
+    330.0
+   ],
+   "src": "rose/upL.webp",
+   "cx": 160.0,
+   "cy": 139.5,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 238.0,
+   "y": 247.5,
+   "tip": [
+    130.0,
+    200.0
+   ],
+   "liftDir": -1,
+   "liftTurn": 6,
+   "breath": 0.45
+  },
+  {
+   "id": "stemA",
+   "kind": "stem",
+   "z": 2.2,
+   "parent": "stemB",
+   "pivot": [
+    490.0,
+    1015.0
+   ],
+   "src": "rose/stemA.webp",
+   "cx": 71.5,
+   "cy": 222.5,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 537.5,
+   "y": 800.5
+  },
+  {
+   "id": "stemB",
+   "kind": "stem",
+   "z": 2.1,
+   "parent": "stemC",
+   "pivot": [
+    455.0,
+    1198.0
+   ],
+   "src": "rose/stemB.webp",
+   "cx": 47.0,
+   "cy": 90.5,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 479.0,
+   "y": 1112.5
+  },
+  {
+   "id": "stemC",
+   "kind": "stem",
+   "z": 2.0,
+   "parent": null,
+   "pivot": [
+    510.0,
+    1515.0
+   ],
+   "src": "rose/stemC.webp",
+   "cx": 52.5,
+   "cy": 162.0,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 485.5,
+   "y": 1364.0
+  },
+  {
+   "id": "leafR",
+   "kind": "leaf",
+   "z": 2.5,
+   "parent": "stemA",
+   "pivot": [
+    522.0,
+    1000.0
+   ],
+   "src": "rose/leafR.webp",
+   "cx": 225.5,
+   "cy": 165.5,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 749.5,
+   "y": 855.5,
+   "tip": [
+    975.0,
+    695.0
+   ]
+  },
+  {
+   "id": "leafL",
+   "kind": "leaf",
+   "z": 1,
+   "parent": "stemB",
+   "pivot": [
+    440.0,
+    1140.0
+   ],
+   "src": "rose/leafL.webp",
+   "cx": 188.5,
+   "cy": 175.0,
+   "s": 1,
+   "sx": 1,
+   "rot": 0,
+   "x": 263.5,
+   "y": 1004.0,
+   "tip": [
+    65.0,
+    890.0
+   ]
+  },
+  {
+   "id": "head",
+   "kind": "head",
+   "z": 0,
+   "parent": "stemA",
+   "pivot": [
+    505,
+    585
+   ]
+  }
+ ]
+}

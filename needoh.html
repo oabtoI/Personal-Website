@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Squishy Cube</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shrikhand&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; height: 100%; background: transparent; }
+  body { display: grid; place-items: center; }
+  #needoh {
+    width: min(100vw, 100vh);   /* fill whatever frame it's embedded in */
+    aspect-ratio: 1;
+    touch-action: none;
+    cursor: grab;
+    display: block;
+  }
+  #needoh.pressing { cursor: grabbing; }
+</style>
+</head>
+<body>
+<canvas id="needoh" aria-label="Squishy pink cube. Press, hold and drag to squish it."></canvas>
+
+<script>
+/*
+  Virtual sugar-filled squishy.
+
+  How the real thing behaves (and how it's modelled here):
+  - The fill is a thick maltose / sugar-syrup gel: viscoelastic. Squeezed slowly
+    it flows and sinks deep; jabbed quickly it feels firm and only jiggles.
+    -> the fingertip sinks in over time (pressRamp), so quick taps stay shallow.
+  - The gel is incompressible: pushing one spot in makes the rest bulge out.
+    -> displaced volume inflates the body and pushes material sideways, away from the finger.
+  - It's "slow rise": release and it snaps back partway, then the dent oozes
+    back over a second or two. Hold longer and the dent sets deeper.
+    -> elastic spring toward a plastic "memory" field that creeps toward the
+       current dent while held, then slowly decays and spreads out.
+  - It's thinner where pressed, so more translucent / saturated there.
+*/
+(() => {
+  const canvas = document.getElementById('needoh');
+  const ctx = canvas.getContext('2d');
+
+  // ---------- tunables ----------
+  const G = 72;                // physics grid resolution
+  const W0 = -0.82, W1 = 0.82;  // world extent (room for the cube plus its squish bulge)
+  const CELL = (W1 - W0) / (G - 1);
+  const HALF = 0.6, CORNER = 0.3;   // cube face
+  const THICK = 0.34, EDGE = 0.34;  // pillow profile
+  const SIGMA = 0.16;           // fingertip size
+  const DMAX = 0.27;            // max fingertip depth
+  const PRESS_TAU = 0.38;       // s, how fast the finger sinks in (viscous)
+  const K = 210, C = 15;        // elastic spring / damping (slightly underdamped jiggle)
+  const CREEP = 1.3;            // how fast a held dent "sets"
+  const RISE_TAU = 1.7;         // s, slow-rise recovery
+  const LATERAL = 0.2, INFLATE_XY = 1.4, INFLATE_Z = 3.2;
+
+  // ---------- fields ----------
+  const N = G * G;
+  const h = new Float32Array(N), v = new Float32Array(N), hp = new Float32Array(N);
+  const f = new Float32Array(N), tmp = new Float32Array(N), B = new Float32Array(N);
+  const ux = new Float32Array(N), uy = new Float32Array(N);
+
+  // ---------- marble texture (moves with the material) ----------
+  const MT = 128;
+  const marble = new Float32Array(MT * MT);
+  (function buildMarble() {
+    const R = 32, rnd = new Float32Array(R * R);
+    let s = 1337; const rand = () => (s = (s * 16807) % 2147483647) / 2147483647;
+    for (let i = 0; i < R * R; i++) rnd[i] = rand();
+    const vn = (x, y) => {
+      const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+      const sx = xf * xf * (3 - 2 * xf), sy = yf * yf * (3 - 2 * yf);
+      const a = rnd[((yi & 31) * R) + (xi & 31)], b = rnd[((yi & 31) * R) + ((xi + 1) & 31)];
+      const c = rnd[(((yi + 1) & 31) * R) + (xi & 31)], d = rnd[(((yi + 1) & 31) * R) + ((xi + 1) & 31)];
+      return a + (b - a) * sx + (c - a) * sy + (a - b - c + d) * sx * sy;
+    };
+    const fbm = (x, y) => { let t = 0, a = 0.5; for (let o = 0; o < 4; o++) { t += a * vn(x, y); x *= 2; y *= 2; a *= 0.5; } return t; };
+    for (let j = 0; j < MT; j++) for (let i = 0; i < MT; i++) {
+      const x = i / MT * 4, y = j / MT * 4;
+      const w = fbm(x + 3.1 * fbm(x + 1.7, y + 9.2), y + 3.1 * fbm(x + 8.3, y + 2.8));
+      marble[j * MT + i] = Math.max(0, Math.min(1, (Math.sin(w * 9) * 0.5 + 0.5) ** 3));
+    }
+  })();
+  // sample a square texture laid over material space [-1.2, 1.2]
+  const sampleTex = (tex, T, x, y) => {
+    let gx = (x + 1.2) / 2.4 * (T - 1), gy = (y + 1.2) / 2.4 * (T - 1);
+    gx = Math.max(0, Math.min(T - 1.001, gx)); gy = Math.max(0, Math.min(T - 1.001, gy));
+    const i = gx | 0, j = gy | 0, fx = gx - i, fy = gy - j, k = j * T + i;
+    return (tex[k] * (1 - fx) + tex[k + 1] * fx) * (1 - fy) + (tex[k + T] * (1 - fx) + tex[k + T + 1] * fx) * fy;
+  };
+  const sampleMarble = (x, y) => sampleTex(marble, MT, x, y);
+
+  // ---------- embossed logo (lives in material space, so it stretches with the goo) ----------
+  const LT = 320;
+  const logo = new Float32Array(LT * LT);
+  function buildLogo() {
+    const c = document.createElement('canvas'); c.width = c.height = LT;
+    const g = c.getContext('2d');
+    const toPx = (w) => (w + 1.2) / 2.4 * LT;
+    const cx = toPx(0), size = LT * 0.105;
+    g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = `${size}px "Shrikhand", "Cooper Black", Georgia, serif`;
+    g.filter = 'blur(1.2px)';
+    const cy = toPx(0);
+    g.save(); g.translate(cx, cy - size * 0.5); g.rotate(-0.04); g.fillText('NEE', 0, 0); g.restore();
+    g.save(); g.translate(cx, cy + size * 0.5); g.rotate(-0.04); g.fillText('DOH', 0, 0); g.restore();
+    const d = g.getImageData(0, 0, LT, LT).data;
+    for (let i = 0; i < LT * LT; i++) logo[i] = d[i * 4 + 3] / 255;
+  }
+  buildLogo();
+  if (document.fonts) document.fonts.load('40px "Shrikhand"').then(buildLogo, () => {});
+
+  const bilerp = (arr, x, y) => {
+    let gx = (x - W0) / CELL, gy = (y - W0) / CELL;
+    if (gx < 0) gx = 0; else if (gx > G - 1.001) gx = G - 1.001;
+    if (gy < 0) gy = 0; else if (gy > G - 1.001) gy = G - 1.001;
+    const i = gx | 0, j = gy | 0, fx = gx - i, fy = gy - j, k = j * G + i;
+    return (arr[k] * (1 - fx) + arr[k + 1] * fx) * (1 - fy) + (arr[k + G] * (1 - fx) + arr[k + G + 1] * fx) * fy;
+  };
+
+  // rounded box SDF with a slightly lumpy, hand-made outline
+  const shapeSDF = (x, y) => {
+    const qx = Math.abs(x) - HALF + CORNER, qy = Math.abs(y) - HALF + CORNER;
+    const ox = Math.max(qx, 0), oy = Math.max(qy, 0);
+    let d = Math.hypot(ox, oy) + Math.min(Math.max(qx, qy), 0) - CORNER;
+    const top = 0.75 - 0.25 * Math.tanh(y * 4);   // lumpier on top, smoothly blended
+    d += 0.018 * Math.sin(x * 5.3 + 1.1) * top + 0.012 * Math.sin(y * 4.1 + 0.4);
+    return d;
+  };
+
+  // ---------- pointer ----------
+  const ptr = { down: false, x: 0, y: 0, depth: 0 };
+  let globalScale = 1, globalVel = 0, zInflate = 1;
+  const toWorld = (e) => {
+    const r = canvas.getBoundingClientRect();
+    return [W0 + (e.clientX - r.left) / r.width * (W1 - W0), W0 + (e.clientY - r.top) / r.height * (W1 - W0)];
+  };
+  const onBody = (x, y) => {
+    const qx = (x - bilerp(ux, x, y)) / globalScale, qy = (y - bilerp(uy, x, y)) / globalScale;
+    return shapeSDF(qx, qy) < 0.04;
+  };
+  canvas.addEventListener('pointerdown', (e) => {
+    const [x, y] = toWorld(e);
+    if (!onBody(x, y)) return;
+    ptr.down = true; ptr.x = x; ptr.y = y; ptr.depth = 0;
+    canvas.setPointerCapture(e.pointerId);
+    canvas.classList.add('pressing');
+  });
+  canvas.addEventListener('pointermove', (e) => {
+    const [x, y] = toWorld(e);
+    if (ptr.down) { ptr.x = x; ptr.y = y; }
+    else canvas.style.cursor = onBody(x, y) ? '' : 'default';
+  });
+  const release = () => { ptr.down = false; canvas.classList.remove('pressing'); };
+  canvas.addEventListener('pointerup', release);
+  canvas.addEventListener('pointercancel', release);
+
+  // ---------- physics ----------
+  function blur(src, dst, passes) {
+    dst.set(src);
+    for (let p = 0; p < passes; p++) {
+      for (let j = 0; j < G; j++) for (let i = 1; i < G - 1; i++) { const k = j * G + i; tmp[k] = (dst[k - 1] + dst[k] * 2 + dst[k + 1]) * 0.25; }
+      for (let j = 0; j < G; j++) { tmp[j * G] = dst[j * G]; tmp[j * G + G - 1] = dst[j * G + G - 1]; }
+      for (let j = 1; j < G - 1; j++) for (let i = 0; i < G; i++) { const k = j * G + i; dst[k] = (tmp[k - G] + tmp[k] * 2 + tmp[k + G]) * 0.25; }
+    }
+  }
+
+  function step(dt) {
+    // fingertip sinks in gradually: slow press = deep, quick jab = shallow (firm)
+    if (ptr.down) ptr.depth += (DMAX - ptr.depth) * (1 - Math.exp(-dt / PRESS_TAU));
+    const s2 = 2 * SIGMA * SIGMA;
+    for (let j = 0, k = 0; j < G; j++) {
+      const y = W0 + j * CELL;
+      for (let i = 0; i < G; i++, k++) {
+        const x = W0 + i * CELL;
+        if (ptr.down) { const dx = x - ptr.x, dy = y - ptr.y; f[k] = ptr.depth * Math.exp(-(dx * dx + dy * dy) / s2); }
+        else f[k] = 0;
+      }
+    }
+    const rise = Math.exp(-dt / RISE_TAU);
+    let vol = 0;
+    for (let k = 0; k < N; k++) {
+      const target = ptr.down ? Math.max(hp[k], f[k]) : hp[k];
+      v[k] += (K * (target - h[k]) - C * v[k]) * dt;
+      h[k] += v[k] * dt;
+      if (ptr.down && h[k] > hp[k]) hp[k] += (h[k] - hp[k]) * CREEP * dt;  // dent sets while held
+      hp[k] *= rise;                                                         // slow rise
+      vol += h[k];
+    }
+    // shell tension + goo flow: smooth the fields a little
+    for (let j = 1; j < G - 1; j++) for (let i = 1; i < G - 1; i++) {
+      const k = j * G + i;
+      tmp[k] = h[k] + 0.12 * (h[k - 1] + h[k + 1] + h[k - G] + h[k + G] - 4 * h[k]);
+    }
+    for (let j = 1; j < G - 1; j++) for (let i = 1; i < G - 1; i++) { const k = j * G + i; h[k] = tmp[k]; }
+    for (let j = 1; j < G - 1; j++) for (let i = 1; i < G - 1; i++) {
+      const k = j * G + i;
+      tmp[k] = hp[k] + 0.06 * (hp[k - 1] + hp[k + 1] + hp[k - G] + hp[k + G] - 4 * hp[k]);
+    }
+    for (let j = 1; j < G - 1; j++) for (let i = 1; i < G - 1; i++) { const k = j * G + i; hp[k] = tmp[k]; }
+
+    // incompressible: displaced volume bulges the whole body (with a little gooey lag/wobble)
+    vol *= CELL * CELL;
+    const targetScale = 1 + vol * INFLATE_XY;
+    globalVel += (90 * (targetScale - globalScale) - 11 * globalVel) * dt;
+    globalScale += globalVel * dt;
+    zInflate = 1 + (globalScale - 1) * (INFLATE_Z / INFLATE_XY);
+  }
+
+  function lateral() {
+    // material is pushed away from the dent: u = -grad(blurred dent)
+    blur(h, B, 6);
+    for (let j = 0; j < G; j++) for (let i = 0; i < G; i++) {
+      const k = j * G + i;
+      const gx = (B[j * G + Math.min(i + 1, G - 1)] - B[j * G + Math.max(i - 1, 0)]) / (2 * CELL);
+      const gy = (B[Math.min(j + 1, G - 1) * G + i] - B[Math.max(j - 1, 0) * G + i]) / (2 * CELL);
+      ux[k] = -LATERAL * gx; uy[k] = -LATERAL * gy;
+    }
+  }
+
+  // ---------- rendering ----------
+  let RES = 0, img, zbuf, zt, abuf, mbuf, lbuf, wx;
+  function resize() {
+    const css = canvas.getBoundingClientRect().width || 400;
+    const r = Math.round(Math.min(380, css * Math.min(devicePixelRatio || 1, 2) * 0.55));
+    if (r === RES) return;
+    RES = r; canvas.width = canvas.height = RES;
+    img = ctx.createImageData(RES, RES);
+    zbuf = new Float32Array(RES * RES); zt = new Float32Array(RES * RES); abuf = new Float32Array(RES * RES); mbuf = new Float32Array(RES * RES); lbuf = new Float32Array(RES * RES);
+    wx = new Float32Array(RES);
+    for (let i = 0; i < RES; i++) wx[i] = W0 + (i + 0.5) / RES * (W1 - W0);
+  }
+  new ResizeObserver(resize).observe(canvas);
+  resize();
+
+  // warm rose palette (matches the site's dusty pinks: #C98A9A, #D9A2AF, #F1D9DA)
+  const DEEP = [216, 100, 128], LIGHT = [252, 216, 213], VEIN = [232, 140, 156], GLOW = [255, 196, 182];
+  const smooth = (e0, e1, x) => { const t = Math.min(1, Math.max(0, (x - e0) / (e1 - e0))); return t * t * (3 - 2 * t); };
+  const norm = (v) => { const n = Math.hypot(...v); return v.map(c => c / n); };
+  const L = norm([-0.45, -0.6, 0.66]);
+  const H = norm([L[0], L[1], L[2] + 1]);
+  const H2 = norm([0.55, 0.5, 0.5 + 1]);   // soft second highlight, bottom right
+
+  function render() {
+    const px = (W1 - W0) / RES;
+    // pass 1: geometry
+    for (let j = 0, k = 0; j < RES; j++) {
+      const y = wx[j];
+      for (let i = 0; i < RES; i++, k++) {
+        const x = wx[i];
+        const qx = (x - bilerp(ux, x, y)) / globalScale, qy = (y - bilerp(uy, x, y)) / globalScale;
+        const d = shapeSDF(qx, qy);
+        if (d > px) { zbuf[k] = 0; abuf[k] = 0; continue; }
+        abuf[k] = Math.min(1, 0.5 - d / px);
+        const inside = Math.min(1, Math.max(0, -d / EDGE));
+        const z0 = THICK * Math.sqrt(1 - (1 - inside) * (1 - inside)) * zInflate;
+        const lg = sampleTex(logo, LT, qx, qy) * inside;
+        zbuf[k] = Math.max(z0 * 0.18, z0 - bilerp(h, x, y) * Math.min(1, inside * 1.6 + 0.25)) + lg * 0.03;
+        mbuf[k] = sampleMarble(qx, qy);
+        lbuf[k] = lg;
+      }
+    }
+    // smooth the height field so the coarse physics grid never shows as facets
+    for (let p = 0; p < 2; p++) {
+      for (let j = 0; j < RES; j++) for (let i = 1; i < RES - 1; i++) { const k = j * RES + i; zt[k] = (zbuf[k - 1] + 2 * zbuf[k] + zbuf[k + 1]) * 0.25; }
+      for (let j = 1; j < RES - 1; j++) for (let i = 1; i < RES - 1; i++) { const k = j * RES + i; zbuf[k] = (zt[k - RES] + 2 * zt[k] + zt[k + RES]) * 0.25; }
+    }
+    // pass 2: shading
+    const data = img.data, inv2px = 1 / (2 * px);
+    for (let j = 0, k = 0; j < RES; j++) {
+      for (let i = 0; i < RES; i++, k++) {
+        const o = k * 4, a = abuf[k];
+        if (a <= 0) { data[o + 3] = 0; continue; }
+        const zl = i > 0 ? zbuf[k - 1] : 0, zr = i < RES - 1 ? zbuf[k + 1] : 0;
+        const zu = j > 0 ? zbuf[k - RES] : 0, zd = j < RES - 1 ? zbuf[k + RES] : 0;
+        let nx = -(zr - zl) * inv2px, ny = -(zd - zu) * inv2px, nz = 1;
+        const nl = Math.hypot(nx, ny, nz); nx /= nl; ny /= nl; nz /= nl;
+        const ndl = Math.max(0, nx * L[0] + ny * L[1] + nz * L[2]);
+        const ndh = Math.max(0, nx * H[0] + ny * H[1] + nz * H[2]);
+        const ndh2 = Math.max(0, nx * H2[0] + ny * H2[1] + nz * H2[2]);
+        // thickness -> translucency: thin spots (edges, dents) read deeper, juicier pink
+        const t = Math.min(1, zbuf[k] / THICK);
+        const tt = Math.pow(t, 0.9);
+        // logo letters read as clearer, slightly deeper pink rubber
+        const m = Math.min(1, mbuf[k] * 0.5 * (0.3 + 0.7 * (1 - tt * 0.6)) + lbuf[k] * 0.6);
+        const diff = 0.74 + 0.34 * ndl;
+        // wet gloss: tight hot highlight + wide sheen + a soft second light
+        const spec = Math.pow(ndh, 160) * 0.95 + Math.pow(ndh, 30) * 0.2 + Math.pow(ndh2, 60) * 0.22;
+        const fres = Math.pow(1 - nz, 2.2) * 0.22;
+        // glossy "window" reflection that slides along the curved, wet edges
+        const rx = 2 * nz * nx, ry = 2 * nz * ny;
+        const win = smooth(0.2, 0.05, Math.abs(rx + 0.42) - 0.16) * smooth(0.16, 0.04, Math.abs(ry + 0.46) - 0.1) * 0.75
+                  + smooth(0.2, 0.06, Math.hypot(rx - 0.45, ry - 0.42) - 0.05) * 0.25;
+        // light scattering inside the gel: warm glow in the thick middle, facing the viewer
+        const glow = tt * nz * nz * 0.35;
+        for (let c = 0; c < 3; c++) {
+          let col = DEEP[c] + (LIGHT[c] - DEEP[c]) * tt;
+          col += (VEIN[c] - col) * m;
+          col += (GLOW[c] - col) * glow;
+          col = col * diff + 255 * (spec + fres + win);
+          data[o + c] = col > 255 ? 255 : col;
+        }
+        data[o + 3] = a * 255;
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+  }
+
+  // ---------- loop ----------
+  // only animate while on screen (it's embedded at the bottom of a scrolling page)
+  let last = performance.now(), acc = 0, running = false;
+  const DT = 1 / 120;
+  function frame(now) {
+    if (!running) return;
+    acc += Math.min(0.05, (now - last) / 1000); last = now;
+    while (acc >= DT) { step(DT); acc -= DT; }
+    lateral();
+    render();
+    requestAnimationFrame(frame);
+  }
+  const start = () => { if (running) return; running = true; last = performance.now(); requestAnimationFrame(frame); };
+  render();
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(([e]) => { if (e.isIntersecting) start(); else running = false; }).observe(canvas);
+  } else start();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,648 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Prism Bloom</title>
+<style>
+  :root { --ink: rgba(222,232,255,.62); --ink-strong: #eef3ff; --line: rgba(222,232,255,.22); }
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+  canvas { display: block; width: 100vw; height: 100vh; touch-action: none; }
+  .ui { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); display: flex; gap: 8px; }
+  .ui button { font: 500 10px/1 ui-monospace, Menlo, monospace; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--ink); background: rgba(10,14,24,.6); border: 1px solid var(--line); border-radius: 999px;
+    padding: 10px 14px; cursor: pointer; backdrop-filter: blur(6px); transition: color .2s, border-color .2s; }
+  .ui button:hover, .ui button[aria-pressed="true"] { color: var(--ink-strong); border-color: rgba(222,232,255,.5); }
+  .tag { position: fixed; left: 20px; top: 18px; font: 10px/1.6 ui-monospace, Menlo, monospace; letter-spacing: .18em;
+    text-transform: uppercase; color: var(--ink); pointer-events: none; }
+  .tag b { color: var(--ink-strong); font-weight: 500; }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div class="tag"><b>Prism Bloom</b><br>specimen 01 · drag to orbit</div>
+<div class="ui">
+  <button id="spin" aria-pressed="false">Rotate</button>
+  <button id="wire" aria-pressed="true">Mesh</button>
+  <button id="glb">Export .glb</button>
+</div>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+
+const V3 = THREE.Vector3, D2R = Math.PI / 180;
+const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+let seedState = 7;
+const rnd = () => (seedState = (seedState * 16807) % 2147483647) / 2147483647;
+
+/* ---------- renderer / scene ---------- */
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.setClearColor(0x000000, 1);
+document.body.prepend(renderer.domElement);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(32, innerWidth / innerHeight, 0.1, 100);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.dampingFactor = 0.06;
+controls.minDistance = 4; controls.maxDistance = 30;
+controls.autoRotateSpeed = 1.2;
+
+/* ---------- holographic glass shader ---------- */
+const VERT = /* glsl */`
+  varying vec2 vUv; varying vec3 vN; varying vec3 vW;
+  void main(){
+    vUv = uv;
+    vec4 w = modelMatrix * vec4(position, 1.0);
+    vW = w.xyz;
+    vN = normalize(mat3(modelMatrix) * normal);
+    gl_Position = projectionMatrix * viewMatrix * w;
+  }`;
+const FRAG = /* glsl */`
+  uniform float uTime, uSeed, uGridU, uGridV, uLine, uIri, uRim, uBase, uAlpha, uCore, uEdge, uStreakU, uStreakV;
+  uniform vec3 uTint;
+  varying vec2 vUv; varying vec3 vN; varying vec3 vW;
+  float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+  float noise(vec2 p){ vec2 i = floor(p), f = fract(p); vec2 u = f*f*(3.-2.*f);
+    return mix(mix(hash(i), hash(i+vec2(1,0)), u.x), mix(hash(i+vec2(0,1)), hash(i+vec2(1,1)), u.x), u.y); }
+  float fbm(vec2 p){ float a = .5, s = 0.; for(int i = 0; i < 4; i++){ s += a*noise(p); p = p*2.03 + 1.7; a *= .5; } return s; }
+  // holographic foil ramp: cyan -> blue -> violet -> pink -> amber -> teal -> back to cyan
+  vec3 spectrum(float h){
+    h = fract(h) * 6.;
+    vec3 c[7];
+    c[0] = vec3(.10, .95, 1.0); c[1] = vec3(.18, .45, 1.0); c[2] = vec3(.62, .30, 1.0);
+    c[3] = vec3(1.0, .35, .62); c[4] = vec3(1.0, .62, .25); c[5] = vec3(.25, 1.0, .78); c[6] = c[0];
+    int i = int(floor(h)); float f = smoothstep(0., 1., fract(h));
+    vec3 a = c[0], b = c[1];
+    for (int k = 0; k < 6; k++) if (k == i) { a = c[k]; b = c[k + 1]; }
+    return mix(a, b, f);
+  }
+  void main(){
+    vec3 N = normalize(vN); if(!gl_FrontFacing) N = -N;
+    vec3 V = normalize(cameraPosition - vW);
+    float ndv = abs(dot(N, V));
+    float fres = pow(1. - ndv, 2.6);
+
+    // holographic streaks, stretched along the petal length like veins
+    vec2 sp = vec2(vUv.x*uStreakU + uSeed + uTime*.035, vUv.y*uStreakV - uTime*.16);
+    float s = fbm(sp);
+    float s2 = fbm(sp*1.7 + 9.1);
+    float band = smoothstep(.46, .70, s) * (.3 + .7*smoothstep(.15, .85, 1. - ndv*.6));
+    band *= smoothstep(.06, .32, vUv.y);
+    // a wide sheen that sweeps through the whole plant, carrying the colour with it
+    float wave = dot(vW, vec3(.45, .85, .28)) * 1.6 - uTime * .9;
+    float sweep = .5 + .5 * sin(wave);
+    float glint = pow(.5 + .5 * sin(wave * .5 + 1.3), 6.);
+    band *= .45 + .9 * sweep + glint * .8;
+    // centred on cyan; folds and grazing angles push the hue round to violet / pink / amber
+    float h = -.08 + (s2 - .47)*1.35 + pow(1. - ndv, 1.4)*.7 + (s - .55)*1.1 + sweep*.35 + uTime*.025;
+    vec3 iri = spectrum(h);
+    iri = mix(iri, vec3(.15, .9, 1.), .12*(1. - smoothstep(.3, .8, 1. - ndv)));
+
+    // drafting mesh: crisp UV-space quad lines
+    vec2 g = vec2(vUv.x*uGridU, vUv.y*uGridV);
+    vec2 gd = abs(fract(g - .5) - .5) / max(fwidth(g), 1e-4);
+    float line = 1. - min(min(gd.x, gd.y), 1.);
+
+    float edge = smoothstep(1. - uEdge, 1., abs(vUv.x*2. - 1.)) + smoothstep(1. - uEdge*.6, 1., vUv.y)*.6;
+    float core = 1. - smoothstep(0., .38, vUv.y);
+
+    vec3 col = uTint*uBase;
+    col += iri*iri*band*uIri*(.9 + .8*s2);
+    col += vec3(1.)*pow(band, 3.)*uIri*.18;
+    col += vec3(.80, .85, 1.)*line*uLine*(.55 + fres*1.4);
+    col += vec3(.82, .88, 1.)*fres*uRim;
+    col += vec3(.92, .95, 1.)*edge*.3;
+    col += vec3(.85, .9, 1.)*core*uCore;
+    float a = clamp(uAlpha + band*.2 + fres*.2, 0., .9);
+    gl_FragColor = vec4(col, a);
+  }`;
+
+const mats = [];
+function glass(o = {}) {
+  const m = new THREE.ShaderMaterial({
+    vertexShader: VERT, fragmentShader: FRAG,
+    uniforms: {
+      uTime: { value: 0 }, uSeed: { value: o.seed ?? rnd() * 50 },
+      uGridU: { value: o.gridU ?? 26 }, uGridV: { value: o.gridV ?? 40 },
+      uLine: { value: o.line ?? .11 }, uIri: { value: o.iri ?? .55 }, uRim: { value: o.rim ?? .22 },
+      uBase: { value: o.base ?? 1 }, uAlpha: { value: o.alpha ?? .3 }, uCore: { value: o.core ?? .09 },
+      uEdge: { value: o.edge ?? .07 }, uStreakU: { value: o.streakU ?? 3.2 }, uStreakV: { value: o.streakV ?? 1.3 },
+      uTint: { value: new THREE.Color(o.tint ?? 0x0a1430) },
+    },
+    transparent: true, depthWrite: false, side: THREE.DoubleSide,
+    blending: THREE.CustomBlending, blendEquation: THREE.AddEquation,
+    blendSrc: THREE.OneFactor, blendDst: THREE.OneMinusSrcAlphaFactor,
+  });
+  mats.push(m);
+  return m;
+}
+
+/* ---------- geometry builders ---------- */
+// A surface swept along a spine. spine[j] / nref[j] for j = 0..NV; shape(s, v) -> {x, z} in the lateral/normal plane.
+function sweep(spine, nref, NU, shape, twist = () => 0) {
+  const NV = spine.length - 1, pos = [], uv = [], idx = [];
+  const T = new V3(), L = new V3(), N = new V3(), p = new V3();
+  for (let j = 0; j <= NV; j++) {
+    const v = j / NV;
+    T.subVectors(spine[Math.min(NV, j + 1)], spine[Math.max(0, j - 1)]).normalize();
+    L.crossVectors(nref[j], T).normalize();
+    N.crossVectors(T, L).normalize();
+    const tw = twist(v);
+    if (tw) { L.applyAxisAngle(T, tw); N.applyAxisAngle(T, tw); }
+    for (let i = 0; i <= NU; i++) {
+      const s = i / NU * 2 - 1, q = shape(s, v);
+      p.copy(spine[j]).addScaledVector(L, q.x).addScaledVector(N, q.z);
+      pos.push(p.x, p.y, p.z); uv.push(i / NU, v);
+    }
+  }
+  for (let j = 0; j < NV; j++) for (let i = 0; i < NU; i++) {
+    const a = j * (NU + 1) + i, b = a + NU + 1;
+    idx.push(a, b, a + 1, a + 1, b, b + 1);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  g.setIndex(idx); g.computeVertexNormals();
+  return g;
+}
+
+// Tepal in flower space: +Z is the flower's axis, +Y the radial direction. Rotated about Z afterwards.
+function petal(P) {
+  const NV = 80, NU = 52, ds = P.len / NV, spine = [], nref = [];
+  let y = 0, z = P.z0 ?? .05;
+  for (let j = 0; j <= NV; j++) {
+    const v = j / NV;
+    const a = (P.a0 + (P.a1 - P.a0) * Math.pow(v, P.ap ?? .8) + (P.a2 ?? 0) * smooth(.75, 1, v)) * D2R;
+    spine.push(new V3(0, y, z)); nref.push(new V3(0, -Math.sin(a), Math.cos(a)));
+    y += Math.cos(a) * ds; z += Math.sin(a) * ds;
+  }
+  const k = Math.log(.5) / Math.log(P.peak ?? .62), ph = P.seed;
+  const width = v => {
+    const body = Math.pow(Math.max(0, Math.sin(Math.PI * Math.pow(v, k))), P.blunt ?? .6);
+    const scal = 1 + .05 * Math.sin(v * 23 + ph) + .03 * Math.sin(v * 41 + ph * 2);
+    return P.wid * (.06 * (1 - v) + .94 * body) * scal;
+  };
+  const shape = (s, v) => {
+    const hw = width(v), as = s + (P.asym ?? 0) * v;
+    const x = s * hw + (P.shift ?? 0) * v * v * hw;
+    const m = Math.abs(as), tipw = smooth(.72, 1, v);
+    const phase = v * P.rf + s * P.rf * .45 + ph;
+    const ruf = (Math.sin(phase) + .55 * Math.sin(2.3 * phase + 1.3) + .3 * Math.sin(4.1 * phase + ph)) *
+      (Math.pow(m, 2.2) * smooth(.18, .85, v) + tipw * .55);
+    const zc = P.cup * m * m * hw - (P.groove ?? .04) * Math.exp(-s * s * 28) * smooth(0, .5, v) * (1 - v);
+    return { x, z: zc + P.ruffle * ruf };
+  };
+  const geo = sweep(spine, nref, NU, shape, v => (P.twist ?? 0) * v * v);
+  const mesh = new THREE.Mesh(geo, glass({ seed: P.seed * 3.1, gridU: 30, gridV: 44, streakU: P.streakU ?? 3.4 }));
+  const pivot = new THREE.Group();
+  pivot.rotation.z = (P.phi - 90) * D2R;
+  pivot.add(mesh);
+  pivot.userData.base = pivot.rotation.z;
+  return pivot;
+}
+
+// Tapered tube along a curve, with u around / v along so the drafting grid wraps it.
+function tube(curve, radius, NV = 120, NR = 22) {
+  const frames = curve.computeFrenetFrames(NV, false), pos = [], uv = [], idx = [], p = new V3();
+  for (let j = 0; j <= NV; j++) {
+    const v = j / NV, c = curve.getPointAt(v), r = radius(v), Nn = frames.normals[j], B = frames.binormals[j];
+    for (let i = 0; i <= NR; i++) {
+      const t = i / NR * Math.PI * 2;
+      p.copy(c).addScaledVector(Nn, Math.cos(t) * r).addScaledVector(B, Math.sin(t) * r);
+      pos.push(p.x, p.y, p.z); uv.push(i / NR, v);
+    }
+  }
+  for (let j = 0; j < NV; j++) for (let i = 0; i < NR; i++) {
+    const a = j * (NR + 1) + i, b = a + NR + 1;
+    idx.push(a, b, a + 1, a + 1, b, b + 1);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  g.setIndex(idx); g.computeVertexNormals();
+  return g;
+}
+
+// Lanceolate leaf swept along a curve; folds along the midrib and rolls its margin.
+function leaf(points, L) {
+  const curve = new THREE.CatmullRomCurve3(points, false, 'centripetal');
+  const NV = 110, spine = curve.getSpacedPoints(NV), nref = [];
+  for (let j = 0; j <= NV; j++) nref.push(L.ref.clone().normalize());
+  const k = Math.log(.5) / Math.log(L.peak);
+  const width = v => L.wid * (.12 * (1 - v) * (1 - v) + Math.pow(Math.max(0, Math.sin(Math.PI * Math.pow(v, k))), L.sharp));
+  const shape = (s, v) => {
+    const hw = width(v), m = Math.abs(s);
+    let z = L.fold * m * hw + L.roll * Math.pow(Math.max(0, s), 3) * hw * smooth(.2, .9, v);
+    z += .012 * Math.sin(v * 30 + s * 4) * m;
+    return { x: s * hw, z };
+  };
+  return new THREE.Mesh(sweep(spine, nref, 28, shape, L.twist),
+    glass({ seed: L.seed, gridU: 18, gridV: 70, streakU: 2.2, streakV: 2.4, iri: .9, core: 0, edge: .08 }));
+}
+
+/* ---------- the plant ---------- */
+const plant = new THREE.Group();            // pivots at the foot of the stem
+const flower = new THREE.Group();
+plant.add(flower);
+scene.add(plant);
+
+// Flower sits at the head of the stem, face toward the viewer and lifted a little.
+flower.position.set(.05, .62, 0);
+flower.rotation.set(-.88, -.28, .06, 'YXZ');     // face lifted ~50° toward the sky, turned a touch to the left
+
+// Tepals: phi is the direction (deg, 0 = viewer's right, 90 = up) seen from the front.
+const TEPALS = [
+  // back/outer ring
+  { phi: 150, len: 2.7,  wid: .9,  a0: 30, a1: -6,  a2: -16, cup: .18, ruffle: .1,  rf: 15, twist: -.4,  seed: 1.3, peak: .58, shift: .3, z0: -.08 },
+  { phi: 4,   len: 2.35, wid: .74, a0: 26, a1: -6,  a2: -24, cup: .2,  ruffle: .095, rf: 14, twist: .5,   seed: 4.2, peak: .6, shift: -.25, z0: -.08 },
+  { phi: 266, len: 1.6,  wid: .7,  a0: 34, a1: -16, a2: -14, cup: .16, ruffle: .07,  rf: 13, twist: .2,   seed: 7.7, peak: .6, z0: -.04 },
+  // inner ring
+  { phi: 100, len: 2.0,  wid: .8,  a0: 36, a1: 0,   a2: -24, cup: .22, ruffle: .095, rf: 16, twist: .12,  seed: 2.6, peak: .64 },
+  { phi: 220, len: 2.2,  wid: .76, a0: 26, a1: -8,  a2: -18, cup: .18, ruffle: .09,  rf: 15, twist: .35,  seed: 5.9, peak: .6, shift: .15, z0: -.04 },
+  { phi: 314, len: 2.3,  wid: .74, a0: 24, a1: -12, a2: -14, cup: .18, ruffle: .09,  rf: 14, twist: -.4,  seed: 9.1, peak: .6, shift: -.2, z0: -.04 },
+  { phi: 50,  len: 1.45, wid: .58, a0: 44, a1: 8,   a2: -28, cup: .26, ruffle: .07,  rf: 14, twist: -.2,  seed: 3.3, peak: .62, z0: .08 },
+];
+const tepals = TEPALS.map(P => { const t = petal(P); flower.add(t); return t; });
+
+// Stamens: white filaments fanning out of the throat, anthers as small capsules.
+const stamenMat = glass({ tint: 0x6f7fb0, base: .45, iri: .15, line: .12, rim: .9, alpha: .55, core: 0, gridU: 6, gridV: 18, edge: 0 });
+const antherMat = glass({ tint: 0xc8d2f0, base: .6, iri: .2, line: .1, rim: 1, alpha: .8, core: 0, gridU: 8, gridV: 8, edge: 0 });
+const antherGeo = new THREE.SphereGeometry(1, 16, 12);
+seedState = 11;
+for (let i = 0; i < 30; i++) {
+  const psi = (90 + (rnd() - .5) * 250) * D2R;               // mostly fanning upward, like the plate
+  const elev = (24 + rnd() * 34) * D2R, len = .6 + rnd() * .55;
+  const dir = new V3(Math.cos(psi) * Math.cos(elev), Math.sin(psi) * Math.cos(elev), Math.sin(elev));
+  const out = new V3(Math.cos(psi), Math.sin(psi), 0);
+  const a = new V3(0, 0, .12).addScaledVector(out, .04);
+  const b = a.clone().addScaledVector(dir, len * .55).addScaledVector(new V3(0, 0, 1), .06);
+  const c = a.clone().addScaledVector(dir, len).addScaledVector(out, .12 + rnd() * .1);
+  const curve = new THREE.QuadraticBezierCurve3(a, b, c);
+  flower.add(new THREE.Mesh(tube(curve, v => .016 * (1 - .45 * v), 24, 8), stamenMat));
+  const an = new THREE.Mesh(antherGeo, antherMat);
+  an.position.copy(c); an.scale.set(.022, .022, .045);
+  an.lookAt(c.clone().add(curve.getTangentAt(1)).applyMatrix4(new THREE.Matrix4()));
+  flower.add(an);
+}
+// Pistil
+{
+  const curve = new THREE.QuadraticBezierCurve3(new V3(0, 0, .05), new V3(.02, .12, .55), new V3(.08, .3, .95));
+  flower.add(new THREE.Mesh(tube(curve, v => .022 * (1 - .3 * v), 30, 10), stamenMat));
+  for (let i = 0; i < 3; i++) {
+    const s = new THREE.Mesh(antherGeo, antherMat);
+    const t = i / 3 * Math.PI * 2;
+    s.position.set(.08 + Math.cos(t) * .03, .3 + Math.sin(t) * .03, .96); s.scale.setScalar(.03);
+    flower.add(s);
+  }
+}
+// Throat: short densely packed filaments around the core
+for (let i = 0; i < 40; i++) {
+  const psi = rnd() * Math.PI * 2, r = .05 + rnd() * .1;
+  const a = new V3(Math.cos(psi) * r * .4, Math.sin(psi) * r * .4, .02);
+  const c = new V3(Math.cos(psi) * r * 1.6, Math.sin(psi) * r * 1.6, .18 + rnd() * .15);
+  flower.add(new THREE.Mesh(tube(new THREE.LineCurve3(a, c), v => .009, 6, 6), stamenMat));
+}
+// Receptacle / ovary under the bloom
+const ovary = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 24), glass({ gridU: 24, gridV: 16, iri: .5, core: 0, edge: 0, alpha: .3 }));
+ovary.scale.set(.2, .2, .34); ovary.position.set(0, 0, -.2);
+flower.add(ovary);
+
+// Core glow
+const glowTex = (() => {
+  const c = document.createElement('canvas'); c.width = c.height = 128;
+  const x = c.getContext('2d'), g = x.createRadialGradient(64, 64, 0, 64, 64, 64);
+  g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(.25, 'rgba(210,225,255,.45)');
+  g.addColorStop(.6, 'rgba(150,180,255,.08)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+  x.fillStyle = g; x.fillRect(0, 0, 128, 128);
+  return new THREE.CanvasTexture(c);
+})();
+const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: .35 }));
+glow.scale.setScalar(1.1); glow.position.set(0, .05, .25);
+glow.userData.noExport = true;
+flower.add(glow);
+
+// Stem: from beneath the ovary down to the foot, with the slight leftward bow of the plate.
+flower.updateMatrixWorld(true);
+const stemTop = new V3(0, 0, -.5).applyMatrix4(flower.matrixWorld);
+const stemCurve = new THREE.CatmullRomCurve3([
+  stemTop, new V3(0, 0, -.95).applyMatrix4(flower.matrixWorld).add(new V3(0, -.35, 0)), new V3(-.3, -1.2, 0), new V3(-.36, -2.2, .02), new V3(-.24, -3.2, 0), new V3(-.08, -4.1, 0),
+], false, 'centripetal');
+plant.add(new THREE.Mesh(tube(stemCurve, v => .07 + .012 * v - .02 * (1 - smooth(0, .05, v)), 160, 24),
+  glass({ gridU: 14, gridV: 120, iri: .35, core: 0, edge: 0, alpha: .26, streakU: 1, streakV: 4 })));
+
+// Leaves
+plant.add(leaf([
+  new V3(-.32, -2.55, .02), new V3(-.55, -2.25, .14), new V3(-1.0, -1.85, .26), new V3(-1.5, -1.45, .26),
+  new V3(-1.88, -1.12, .1), new V3(-2.02, -.98, -.06), new V3(-1.94, -.9, -.14),
+], { ref: new V3(.25, .1, 1), wid: .3, peak: .38, sharp: 1.15, fold: .32, roll: .45, seed: 12.5,
+  twist: v => -.5 * v - 1.2 * smooth(.75, 1, v) }));
+plant.add(leaf([
+  new V3(-.3, -2.05, -.02), new V3(-.05, -1.8, .12), new V3(.45, -1.5, .22), new V3(1.05, -1.22, .2),
+  new V3(1.6, -1.04, .08), new V3(2.02, -.94, -.04), new V3(2.18, -.84, -.12),
+], { ref: new V3(-.15, .35, 1), wid: .24, peak: .33, sharp: 1.4, fold: .28, roll: .35, seed: 17.9,
+  twist: v => .7 * v + .9 * smooth(.8, 1, v) }));
+// Small sheathing bract where the left leaf meets the stem
+plant.add(leaf([
+  new V3(-.2, -3.0, .03), new V3(-.3, -2.75, .1), new V3(-.48, -2.45, .14), new V3(-.62, -2.25, .1),
+], { ref: new V3(0, 0, 1), wid: .12, peak: .4, sharp: 1, fold: .5, roll: .2, seed: 22, twist: v => .4 * v }));
+
+plant.position.y = .4;
+const box = new THREE.Box3().setFromObject(plant);
+const center = box.getCenter(new V3());
+
+/* ---------- camera fit ---------- */
+function fit() {
+  const w = innerWidth, h = innerHeight;
+  camera.aspect = w / h;
+  const size = box.getSize(new V3());
+  const needH = size.y * 1.12, needW = size.x * 1.12;
+  const vfov = camera.fov * D2R;
+  const distH = needH / 2 / Math.tan(vfov / 2);
+  const distW = needW / 2 / (Math.tan(vfov / 2) * camera.aspect);
+  const d = Math.max(distH, distW);
+  if (!fit.done) { camera.position.set(center.x, center.y + .2, center.z + d); fit.done = true; }
+  controls.target.copy(center);
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h); composer.setSize(w, h); bloom.setSize(w, h);
+}
+
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), .55, .45, .42);
+composer.addPass(bloom);
+composer.addPass(new OutputPass());
+fit();
+addEventListener('resize', fit);
+
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+/* ---------- butterfly ---------- */
+// 1-D Catmull-Rom through evenly spaced keys, t in 0..1
+const keyed = (k, t) => {
+  const n = k.length - 1, x = Math.min(n - 1e-6, Math.max(0, t * n)), i = Math.floor(x), f = x - i;
+  const p0 = k[Math.max(0, i - 1)], p1 = k[i], p2 = k[i + 1], p3 = k[Math.min(n, i + 2)];
+  return .5 * (2 * p1 + (-p0 + p2) * f + (2 * p0 - 5 * p1 + 4 * p2 - p3) * f * f + (-p0 + 3 * p1 - 3 * p2 + p3) * f * f * f);
+};
+// Wing as a fan from its root: u sweeps the angle so the drafting grid reads as radiating veins, v runs root -> margin.
+// Span is +X, the body's forward is +Z.
+function wingGeo(th0, th1, radii, o) {
+  const NU = 48, NV = 22, pos = [], uv = [], idx = [];
+  for (let j = 0; j <= NV; j++) {
+    const v = j / NV;
+    for (let i = 0; i <= NU; i++) {
+      const u = i / NU, th = (th0 + (th1 - th0) * u) * D2R;
+      let R = keyed(radii, u) * o.scale;
+      if (o.scallop) R *= 1 - o.scallop * (.5 + .5 * Math.cos(u * Math.PI * 2 * o.lobes));
+      if (o.tail) R += o.tail * Math.exp(-(((u - .2) / .065) ** 2));      // soft swallowtail lobe
+      const r = v * R;
+      pos.push(Math.cos(th) * r, o.camber * Math.sin(Math.PI * v) * R - .06 * r * r, Math.sin(th) * r);
+      uv.push(u, v);
+    }
+  }
+  for (let j = 0; j < NV; j++) for (let i = 0; i < NU; i++) {
+    const a = j * (NU + 1) + i, b = a + NU + 1;
+    idx.push(a, b, a + 1, a + 1, b, b + 1);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  g.setIndex(idx); g.computeVertexNormals();
+  return g;
+}
+
+const bfly = new THREE.Group();
+bfly.scale.setScalar(2.2);
+scene.add(bfly);
+const wingMat = glass({ iri: 1.7, gridU: 14, gridV: 7, streakU: 2.6, streakV: 2.2, alpha: .24, core: .12, edge: .16, line: .34, rim: .5 });
+const bodyMat = glass({ tint: 0x5a6aa0, base: .5, iri: .4, line: .1, rim: .8, alpha: .5, core: 0, gridU: 10, gridV: 14, edge: 0 });
+const foreG = wingGeo(-22, 88, [.40, .50, .60, .70, .80, .86, .80, .55, .18], { scale: .66, camber: .03 });
+const hindG = wingGeo(-122, -10, [.32, .52, .64, .70, .68, .62, .52, .40, .30], { scale: .58, camber: .025, scallop: .045, lobes: 5, tail: .12 });
+function wing(geo, side, z) {
+  const p = new THREE.Group();
+  p.position.set(side * .022, .012, z);
+  if (side < 0) p.scale.x = -1;           // mirror; rotation is applied after scale, so the left wing flaps with -angle
+  p.add(new THREE.Mesh(geo, wingMat));
+  bfly.add(p);
+  return p;
+}
+const W = { rf: wing(foreG, 1, .025), rh: wing(hindG, 1, -.01), lf: wing(foreG, -1, .025), lh: wing(hindG, -1, -.01) };
+function setWings(fore, hind, sweep) {
+  W.rf.rotation.set(0, sweep, fore);      W.lf.rotation.set(0, -sweep, -fore);
+  W.rh.rotation.set(0, sweep * .4, hind); W.lh.rotation.set(0, -sweep * .4, -hind);
+}
+{
+  const ell = new THREE.SphereGeometry(1, 20, 14);
+  const part = (z, y, sx, sy, sz) => { const m = new THREE.Mesh(ell, bodyMat); m.position.set(0, y, z); m.scale.set(sx, sy, sz); bfly.add(m); return m; };
+  part(.02, 0, .034, .034, .08);                        // thorax
+  part(-.16, -.006, .022, .02, .13).rotation.x = .08;   // abdomen
+  part(.11, .006, .027, .027, .027);                    // head
+  for (const s of [-1, 1]) {                            // clubbed antennae
+    const c = new THREE.QuadraticBezierCurve3(new V3(s * .012, .02, .13), new V3(s * .045, .085, .25), new V3(s * .095, .11, .37));
+    bfly.add(new THREE.Mesh(tube(c, () => .0042, 16, 5), stamenMat));
+    const club = new THREE.Mesh(antherGeo, antherMat);
+    club.position.copy(c.v2); club.scale.set(.011, .011, .022); club.lookAt(c.v2.clone().add(c.getTangentAt(1)));
+    bfly.add(club);
+  }
+}
+
+// Flight. Real butterflies flap ~5-10 Hz with a quicker downstroke, climb a little on every downstroke and sag on the
+// upstroke, so the path bobs and zig-zags; they wander between loose targets, slip into short glides, and
+// stop on a petal to bask, opening and closing their wings slowly before taking off again.
+const UP = new V3(0, 1, 0), ORIGIN = new V3(), tmpM = new THREE.Matrix4(), tmpQ = new THREE.Quaternion();
+const BOUND = { min: new V3(box.min.x - .4, center.y - .2, -1.4), max: new V3(box.max.x + .4, box.max.y + .7, 2.0) };
+const B = {
+  pos: new V3(BOUND.max.x + .6, BOUND.max.y - .3, 1.4), vel: new V3(-.9, -.1, -.3), fwd: new V3(-1, 0, 0),
+  target: new V3(), jitter: new V3(), state: 'fly', phase: 0, glideUntil: 0, nextTarget: 0, perchAt: 9, roll: 0,
+  spot: null, t0: 0, until: 0, from: new V3(), fromQ: new THREE.Quaternion(), fore: 0,
+};
+const spots = tepals.map(p => p.children[0]);
+function perchFrame(mesh) {
+  const g = mesh.geometry, i = 48 * 53 + 26;          // midrib, ~60% out along the tepal
+  const p = new V3().fromBufferAttribute(g.attributes.position, i), n = new V3().fromBufferAttribute(g.attributes.normal, i);
+  mesh.localToWorld(p); n.transformDirection(mesh.matrixWorld);
+  if (n.y < 0) n.negate();
+  return { p, n };
+}
+const randomTarget = () => new V3(
+  THREE.MathUtils.lerp(BOUND.min.x, BOUND.max.x, rnd()), THREE.MathUtils.lerp(BOUND.min.y, BOUND.max.y, rnd()),
+  THREE.MathUtils.lerp(BOUND.min.z, BOUND.max.z, rnd()));
+// Flap angle: phase 0 = wings up. The downstroke takes ~40% of the cycle.
+function flapAngles(phase) {
+  const p = ((phase % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2), d = Math.PI * 2 * .4;
+  const w = p < d ? p / d * Math.PI : Math.PI + (p - d) / (Math.PI * 2 - d) * Math.PI;
+  const a = .5 - .5 * Math.cos(w);
+  return { w, fore: (74 - 104 * a) * D2R };
+}
+function orient(fwd, up, rate, dt) {
+  tmpM.lookAt(fwd, ORIGIN, up); tmpQ.setFromRotationMatrix(tmpM);
+  bfly.quaternion.slerp(tmpQ, 1 - Math.exp(-dt * rate));
+}
+
+function moveButterfly(t, dt) {
+  dt = Math.min(dt, .05);
+  if (reduce && B.state !== 'perch') {           // reduced motion: rest on a petal with wings half open
+    B.spot = spots[3]; B.state = 'perch'; B.until = Infinity;
+  }
+  if (B.state === 'fly' || B.state === 'approach') {
+    if (B.state === 'fly') {
+      if (t > B.nextTarget) {
+        B.target.copy(randomTarget()); B.nextTarget = t + .9 + rnd() * 2.2;
+        if (rnd() < .3) B.glideUntil = t + .3 + rnd() * .5;
+      }
+      if (t > B.perchAt) {                        // pick one of the more upward-facing tepals
+        const toCam = camera.position.clone().sub(center).normalize();
+        const score = f => f.n.y + f.n.dot(toCam);
+        const ranked = spots.map(m => ({ m, f: perchFrame(m) })).sort((a, b) => score(b.f) - score(a.f));
+        B.spot = ranked[Math.floor(rnd() * 2)].m; B.state = 'approach';
+      }
+    }
+    let speed = 1.15;
+    if (B.state === 'approach') {
+      const f = perchFrame(B.spot);
+      B.target.copy(f.p).addScaledVector(f.n, .45);
+      const dist = B.pos.distanceTo(B.target);
+      speed = Math.min(1.1, .3 + dist * 1.2);
+      B.glideUntil = 0;
+      if (dist < .2) { B.state = 'land'; B.t0 = t; B.from.copy(B.pos); B.fromQ.copy(bfly.quaternion); }
+    }
+    const gliding = t < B.glideUntil;
+    const prev = B.phase;
+    B.phase += dt * (gliding ? 0 : 6.5) * Math.PI * 2;
+    if (Math.floor(B.phase / (Math.PI * 2)) !== Math.floor(prev / (Math.PI * 2)))      // new beat: a fresh nudge
+      B.jitter.set(rnd() - .5, (rnd() - .5) * .6, rnd() - .5).multiplyScalar(4.5);
+    B.jitter.multiplyScalar(Math.exp(-dt * 5));
+
+    const { w, fore } = flapAngles(B.phase);
+    const acc = B.target.clone().sub(B.pos).setLength(speed).sub(B.vel).multiplyScalar(2.2).add(B.jitter);
+    acc.y += gliding ? -.45 : 2.6 * Math.sin(w) - .1;   // lift on the downstroke, sag on the upstroke
+    B.vel.addScaledVector(acc, dt);
+    const sp = B.vel.length();
+    if (sp > 1.7) B.vel.multiplyScalar(1.7 / sp); else if (sp < .25) B.vel.multiplyScalar(.25 / sp);
+    B.pos.addScaledVector(B.vel, dt);
+    bfly.position.copy(B.pos);
+
+    B.fwd.lerp(B.vel.clone().normalize(), 1 - Math.exp(-dt * 4)).normalize();
+    const right = new V3().crossVectors(B.fwd, UP).normalize();
+    B.roll += (THREE.MathUtils.clamp(-acc.dot(right) * .12, -.55, .55) - B.roll) * (1 - Math.exp(-dt * 6));
+    const look = B.fwd.clone().add(new V3(0, .3 + .12 * Math.sin(w), 0)).normalize();
+    orient(look, UP.clone().applyAxisAngle(B.fwd, B.roll), 9, dt);
+
+    B.fore = gliding ? (14 + 3 * Math.sin(t * 22)) * D2R : fore;
+    const hind = gliding ? B.fore - .05 : flapAngles(B.phase - .45).fore * .92;
+    setWings(B.fore, hind, gliding ? 0 : .22 * Math.sin(w));
+  } else if (B.state === 'land') {
+    const k = smooth(0, 1, (t - B.t0) / .7), f = perchFrame(B.spot);
+    const seat = f.p.clone().addScaledVector(f.n, .08);
+    bfly.position.lerpVectors(B.from, seat, k); B.pos.copy(bfly.position);
+    const fw = B.fwd.clone().addScaledVector(f.n, -B.fwd.dot(f.n)).normalize();
+    tmpM.lookAt(fw, ORIGIN, f.n); tmpQ.setFromRotationMatrix(tmpM);
+    bfly.quaternion.slerpQuaternions(B.fromQ, tmpQ, k);
+    B.phase += dt * 6.5 * (1 - k) * Math.PI * 2;
+    const fl = flapAngles(B.phase).fore;
+    B.fore = fl + (80 * D2R - fl) * k;
+    setWings(B.fore, B.fore - .05, 0);
+    if (k >= 1) { B.state = 'perch'; B.t0 = t; B.until = t + 4 + rnd() * 4; B.fwd.copy(fw); }
+  } else if (B.state === 'perch') {
+    const f = perchFrame(B.spot);
+    bfly.position.copy(f.p).addScaledVector(f.n, .08); B.pos.copy(bfly.position);
+    const fw = B.fwd.clone().addScaledVector(f.n, -B.fwd.dot(f.n)).normalize();
+    tmpM.lookAt(fw, ORIGIN, f.n); bfly.quaternion.setFromRotationMatrix(tmpM);
+    // basking: wings drift open and closed slowly, with a little flick now and then
+    const o = reduce ? .55 : .5 - .5 * Math.cos((t - B.t0) * Math.PI * 2 / 2.8);
+    const flick = reduce ? 0 : Math.max(0, Math.sin((t - B.t0) * 9)) * .08 * (Math.sin((t - B.t0) * .7) > .85);
+    B.fore = (80 - 66 * o) * D2R + flick;
+    setWings(B.fore, B.fore - .04, 0);
+    if (t > B.until) {                              // take off: spring up off the petal
+      B.state = 'fly'; B.vel.copy(f.n).multiplyScalar(1.1).addScaledVector(B.fwd, .5);
+      B.perchAt = t + 12 + rnd() * 10; B.nextTarget = 0; B.phase = 0;
+    }
+  }
+}
+
+
+// Flexible wings: the membrane isn't a rigid plate. Tips lag the root (bend against the stroke), the trailing edge
+// lags the leading edge (twist / feathering), and a small ripple runs out along the veins, all scaled by how fast
+// the wing is moving. Left/right share geometry, and the left side is a mirror, so one deformation serves both.
+for (const g of [foreG, hindG]) g.userData.base = g.attributes.position.array.slice();
+const F = { pf: null, ph: null, wf: 0, wh: 0 };
+function flexWing(g, omega, t, gain) {
+  const base = g.userData.base, pos = g.attributes.position.array, uv = g.attributes.uv.array;
+  const bend = -omega * .003 * gain, twist = -omega * .0045 * gain;
+  const amp = (.008 + Math.min(.022, Math.abs(omega) * .0007)) * gain;
+  for (let i = 0, n = pos.length / 3; i < n; i++) {
+    const u = uv[i * 2], v = uv[i * 2 + 1], x = base[i * 3], z = base[i * 3 + 2];
+    const ripple = Math.sin(t * 26 - v * 7 + u * 5) + .5 * Math.sin(t * 41 - v * 11 - u * 3);
+    pos[i * 3 + 1] = base[i * 3 + 1] + bend * v * v + twist * z * v + amp * ripple * v * v * (.4 + .6 * Math.abs(x) / (Math.abs(x) + .1));
+  }
+  g.attributes.position.needsUpdate = true;
+  g.computeVertexNormals();
+}
+function updateButterfly(t, dt) {
+  dt = Math.min(dt, .05);
+  moveButterfly(t, dt);
+  if (reduce || dt <= 0) return;
+  const f = W.rf.rotation.z, h = W.rh.rotation.z;
+  if (F.pf !== null) {     // smoothed wing angular velocity (rad/s)
+    F.wf += ((f - F.pf) / dt - F.wf) * Math.min(1, dt * 30);
+    F.wh += ((h - F.ph) / dt - F.wh) * Math.min(1, dt * 30);
+  }
+  F.pf = f; F.ph = h;
+  flexWing(foreG, F.wf, t, 1);
+  flexWing(hindG, F.wh, t + .4, 1.2);
+}
+
+/* ---------- UI ---------- */
+const spinBtn = document.getElementById('spin'), wireBtn = document.getElementById('wire');
+spinBtn.onclick = () => { controls.autoRotate = !controls.autoRotate; spinBtn.setAttribute('aria-pressed', controls.autoRotate); };
+wireBtn.onclick = () => {
+  const on = wireBtn.getAttribute('aria-pressed') !== 'true';
+  wireBtn.setAttribute('aria-pressed', on);
+  for (const m of mats) { m.userData.line ??= m.uniforms.uLine.value; m.uniforms.uLine.value = on ? m.userData.line : 0; }
+};
+document.getElementById('glb').onclick = () => {
+  const out = plant.clone(true);
+  const phys = new THREE.MeshPhysicalMaterial({
+    color: 0xc8d6ff, metalness: 0, roughness: .12, transmission: .85, thickness: .05, ior: 1.4,
+    iridescence: 1, iridescenceIOR: 1.35, iridescenceThicknessRange: [180, 900],
+    transparent: true, opacity: .55, side: THREE.DoubleSide,
+  });
+  const drop = [];
+  out.traverse(o => { if (o.userData.noExport) drop.push(o); else if (o.isMesh) o.material = phys; });
+  drop.forEach(o => o.removeFromParent());
+  new GLTFExporter().parse(out, buf => {
+    const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([buf], { type: 'model/gltf-binary' })), download: 'prism-bloom.glb' });
+    a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }, e => console.error(e), { binary: true });
+};
+
+/* ---------- motion ---------- */
+const clock = new THREE.Clock();
+let lastT = 0;
+renderer.setAnimationLoop(() => {
+  const t = clock.getElapsedTime(), dt = t - lastT; lastT = t;
+  updateButterfly(t, dt);
+  if (!reduce) for (const m of mats) m.uniforms.uTime.value = t;
+  if (!reduce) {
+    plant.rotation.z = Math.sin(t * .45) * .012;
+    flower.rotation.x = -.88 + Math.sin(t * .6) * .015;
+    tepals.forEach((p, i) => p.rotation.z = p.userData.base + Math.sin(t * .8 + i * 1.3) * .012);
+    glow.material.opacity = .42 + Math.sin(t * 1.4) * .05;
+  }
+  controls.update();
+  composer.render();
+});
+window.__scene = { scene, camera, controls, flower, plant, bfly, B };
+</script>
+</body>
+</html>
