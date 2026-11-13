@@ -46,6 +46,32 @@
         "/Users/oabto/Desktop/light-flowers"
       ],
       "port": 8768
+    },
+    {
+      "name": "yours2learn-api",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "/private/tmp/claude-502/-Users-oabto--claude-spares-spare-OwFDr2/7ae5e4d8-c714-4ca4-baf2-fc17712fe735/scratchpad/yours2learn",
+        "run",
+        "server"
+      ],
+      "port": 3001
+    },
+    {
+      "name": "yours2learn",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "/private/tmp/claude-502/-Users-oabto--claude-spares-spare-OwFDr2/7ae5e4d8-c714-4ca4-baf2-fc17712fe735/scratchpad/yours2learn",
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "5173",
+        "--strictPort"
+      ],
+      "port": 5173
     }
   ]
 }

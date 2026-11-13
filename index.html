@@ -228,9 +228,14 @@
   .props{display:grid;grid-template-columns:140px 1fr;border-top:1px solid var(--rule);margin-bottom:32px}
   .props dt,.props dd{padding:8px 0;border-bottom:1px solid var(--rule);font-size:.875rem;line-height:1.25rem}
   .props dt{color:var(--text-2)}
+  .props dd a{color:inherit;text-decoration:underline;text-decoration-color:var(--rule);text-underline-offset:3px}
+  .props dd a:hover{text-decoration-color:currentColor}
   .prose p{font-size:1rem;line-height:1.75rem;margin-bottom:16px;max-width:640px;text-wrap:pretty}
   .quotes{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:32px}
   .h2{font-size:1.25rem;line-height:1.75rem;font-weight:600;margin:40px 0 12px}
+  .awards{list-style:none;margin:0;padding:0;border-top:1px solid var(--rule)}
+  .awards li{display:flex;justify-content:space-between;align-items:baseline;gap:4px 16px;flex-wrap:wrap;padding:8px 0;border-bottom:1px solid var(--rule);font-size:.875rem;line-height:1.25rem}
+  .awards .by{color:var(--text-2)}
   /* squishy up on the left, minesweeper lower on the right; columns sized so the cube and the board match */
   .play{display:grid;grid-template-columns:minmax(0,4fr) minmax(0,3fr);gap:24px;align-items:start;margin-top:40px}
   .play{position:relative}
@@ -307,7 +312,10 @@
   .links a::after{display:none}
   .links a:hover{color:var(--ink);background:var(--hov)}
   .links .sep{color:var(--ink-2);font-weight:400}
-  .links.social{font-size:.875rem;line-height:1.25rem;gap:4px;margin-top:2px;font-weight:400;color:var(--ink-2)}
+  /* one quiet column under me / projects / art, one link per line, left edges lined up */
+  .links.social{display:flex;flex-direction:column;align-items:flex-start;gap:2px;margin-top:4px;
+                font-size:.875rem;line-height:1.25rem;font-weight:400;color:var(--ink-2);white-space:nowrap}
+  .links.social a{padding:1px 0}
   body.ready .links.social a{opacity:1}
   .links.social a:hover{color:var(--ink)}
   .links a[aria-disabled="true"]{cursor:default}
@@ -401,6 +409,7 @@
           <a id="lnGithub" href="#" target="_blank" rel="noopener">github</a>
           <a id="lnLinkedin" href="#" target="_blank" rel="noopener">linkedin</a>
           <a id="lnEmail" href="#">email</a>
+          <a id="lnResume" href="assets/resume.pdf" target="_blank" rel="noopener">resume.pdf</a>
         </nav>
       </div>
     </div>
@@ -466,6 +475,11 @@
     if (realUrl(u)) a.href = u; else { a.removeAttribute('href'); a.setAttribute('aria-disabled', 'true'); a.title = 'add this link in SOCIAL'; }
   });
   document.getElementById('lnEmail').href = 'mailto:' + SOCIAL.email;
+  // show the real addresses, not just names
+  const bare = u => u.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
+  if (realUrl(SOCIAL.github)) document.getElementById('lnGithub').textContent = bare(SOCIAL.github);
+  if (realUrl(SOCIAL.linkedin)) document.getElementById('lnLinkedin').textContent = bare(SOCIAL.linkedin);
+  document.getElementById('lnEmail').textContent = SOCIAL.email;
 
   /* ---------- Light / dark ---------- */
   const themeBtn = document.getElementById('theme'), themeLabel = document.getElementById('themeLabel');
@@ -559,7 +573,18 @@
     },
     me: {
       quote: '{{A line that sounds like you}}',
-      props: [ ['based in', 'Toronto, Canada'], ['studying', 'Comp Sci @ UWaterloo'], ['currently', '1A term'], ['contact me', 'ariannaliu.n2@gmail.com'] ],
+      props: [ ['based in', 'Toronto, Canada'], ['studying', 'Comp Sci @ UWaterloo'], ['currently', '1A term'],
+               ['contact me', ['ariannaliu.n2@gmail.com', 'mailto:ariannaliu.n2@gmail.com']], ['resume', ['resume.pdf', 'assets/resume.pdf']] ],
+      awards: [
+        ['University of Toronto National Book Award', 'University of Toronto · Jun 2026'],
+        ['A.Y. Jackson Computer Science Award', 'A.Y. Jackson SS · May 2026'],
+        ['5x Canadian Scholastic Art & Writing Award', 'Scholastic · Jan 2026'],
+        ['uOttaHack 3rd Place, Sentry track', 'Sentry · Jan 2026'],
+        ['York Summer Debating Tournament, Silver Champion', 'York University Debate · Jun 2025'],
+        ['Waterloo Spring HST, 3rd Top Speaker', 'UWaterloo Debate · May 2025'],
+        ['Hart House High Schools, Quarterfinalist', 'UofT Debate · Feb 2025'],
+        ['International Style Debate Competition, 1st Place', 'May 2023'],
+      ],
       about: [ 'I love coding, art, debate, and sensory experiences' ],
       quotes: [ 'acrylic painting', 'squishy collecting', 'minesweeper speedruns' ],
     },
@@ -729,8 +754,11 @@
           <img src="${esc(it.img)}" alt="${esc(it.alt)}" loading="lazy" decoding="async"></button></div>`).join('')}
       </div>`;
     return `
-      <dl class="props">${c.props.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
+      <dl class="props">${c.props.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${Array.isArray(v)
+        ? `<a href="${esc(v[1])}"${v[1].startsWith('mailto:') ? '' : ' target="_blank" rel="noopener"'}>${esc(v[0])}</a>` : esc(v)}</dd>`).join('')}</dl>
       <div class="prose">${c.about.map(t => `<p>${esc(t)}</p>`).join('')}</div>
+      <h3 class="h2">⊹ awards</h3>
+      <ul class="awards">${c.awards.map(([t, by]) => `<li><span class="aw">${esc(t)}</span><span class="by">${esc(by)}</span></li>`).join('')}</ul>
       <h3 class="h2">⊹ my top 3 </h3>
       <div class="quotes">${c.quotes.map(q => `<div class="note">${esc(q)}</div>`).join('')}</div>
       <div class="play">
