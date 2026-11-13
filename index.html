@@ -533,13 +533,13 @@
       quote: "I use projects to explore how AI fits into all kinds of fields, from environmental sustainability to social media to accessible education.",
       quoteMarks: false,
       items: [
-        { title: 'BOSCO', tag: 'finished', color: 'green', cover: 'assets/covers/bosco.jpg', link: 'https://github.com/owly1/hacktv',
+        { title: 'BOSCO', cover: 'assets/covers/bosco.jpg', link: 'https://github.com/owly1/hacktv',
           text: "Wildfire-monitoring drone system. Parrot ANAFI · live camera + telemetry · fire detection · 5-min wind-driven spread forecast · GPS person search · 4-drone replay sim. Node + Python · 134 commits in 3 days · team of 4." },
-        { title: 'Scrollganize', tag: 'in progress', color: 'yellow', cover: 'assets/covers/scrollganize.jpg', link: 'https://github.com/richardlancs/Scrollganize',
+        { title: 'Scrollganize', cover: 'assets/covers/scrollganize.jpg', link: 'https://github.com/richardlancs/Scrollganize',
           text: "Chrome side-panel extension for searching saved TikToks. Local SQLite library · caption, creator + hashtag search · All/Any category matching · related-word expansion. TypeScript · Manifest V3 · team of 3." },
-        { title: 'Peaceful Poker', tag: 'finished', color: 'green', cover: 'assets/covers/peaceful-poker.jpg', link: 'https://github.com/Infiniteiiii/Peaceful-Poker',
+        { title: 'Peaceful Poker', cover: 'assets/covers/peaceful-poker.jpg', link: 'https://github.com/Infiniteiiii/Peaceful-Poker',
           text: "No-Limit Hold'em decision trainer. Hand + draw evaluation · exact enumeration + Monte Carlo equity · opponent range modelling · EV for every legal move · light/dark themes. Python · PySide6 · team of 2." },
-        { title: 'Yours2Learn', tag: 'finished', color: 'green', cover: 'assets/covers/yours2learn.jpg', link: 'https://github.com/ferdinandzh4ng/Yours2Learn',
+        { title: 'Yours2Learn', cover: 'assets/covers/yours2learn.jpg', link: 'https://github.com/ferdinandzh4ng/Yours2Learn',
           text: "AI learning platform, uOttaHack 2026. Multi-agent lessons (script, slides, narration, quizzes) · Gemini, GPT + Claude combos tested per student group · webcam heart rate + eye tracking for attention. React · Express · MongoDB · Flask · built in a weekend." },
       ],
     },
@@ -745,7 +745,7 @@
         ${c.items.map(it => {
           const inner = `<img class="cover" src="${esc(it.cover)}" alt="" loading="lazy">
             <div class="body"><span class="t">${esc(it.title)}</span><span class="d">${esc(it.text)}</span>
-            <span class="tag ${esc(it.color)}">${esc(it.tag)}</span></div>`;
+            ${it.tag ? `<span class="tag ${esc(it.color)}">${esc(it.tag)}</span>` : ''}</div>`;
           return it.link ? `<a class="card" href="${esc(it.link)}" target="_blank" rel="noopener">${inner}</a>` : `<div class="card">${inner}</div>`;
         }).join('')}
       </div>`;
