@@ -274,6 +274,13 @@
     @keyframes heart{0%{opacity:0}20%{opacity:1}100%{opacity:0}}
   }
   .squishy{display:block;width:100%;aspect-ratio:1;margin-top:-24px;border:0;background:transparent;color-scheme:normal}
+  /* little handwritten hints: pet the cats, squish the cube (the cat ones ride along on the stickers, kept level) */
+  .tip{font-family:var(--serif);font-size:.875rem;line-height:1.25rem;color:var(--text-2);white-space:nowrap;pointer-events:none;user-select:none;-webkit-user-select:none}
+  .sticker .tip{position:absolute;left:50%;transform:translateX(-50%) rotate(calc(var(--r,0deg) * -1))}
+  .sticker .tip.below{top:calc(100% + 2px)}
+  .sticker .tip.above{bottom:calc(100% + 2px)}
+  .squish-wrap{position:relative}
+  .squish-wrap .tip{position:absolute;left:0;right:0;bottom:4px;text-align:center}
   .mines{display:block;width:100%;margin:96px 0 0;height:420px;border:0;background:transparent;color-scheme:normal}
   /* Full screen art viewer */
   .lightbox{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:64px 80px;
@@ -608,8 +615,8 @@
   /* ---------- Cat stickers on the me page (drag to move; spots are remembered in this browser) ---------- */
   // fx = start position across the play area (0 = left edge, 1 = right edge), y = px from its top, r = tilt
   const STICKERS = [
-    { id: 'tabby', src: 'assets/stickers/tabby.png', label: 'Sticker of my tabby cat lying on her back', h: 255, r: -14, fx: -0.03, y: 230, ratio: 304 / 641 },
-    { id: 'tux',   src: 'assets/stickers/tux.png',   label: 'Sticker of my tuxedo cat looking up',      h: 160, r: 8,   fx: 0.86,  y: -86, ratio: 247 / 561 },
+    { id: 'tabby', src: 'assets/stickers/tabby.png', hint: 'pet Rascal', hintAt: 'below', label: 'Sticker of my tabby cat Rascal lying on her back. Click to pet her', h: 255, r: -14, fx: -0.03, y: 230, ratio: 304 / 641 },
+    { id: 'tux',   src: 'assets/stickers/tux.png',   hint: 'pet Sylvester', hintAt: 'above', label: 'Sticker of my tuxedo cat Sylvester looking up. Click to pet',      h: 160, r: 8,   fx: 0.86,  y: -86, ratio: 247 / 561 },
   ];
   const STICKER_KEY = 'me-sticker-spots';
   const loadSpots = () => { try { return JSON.parse(localStorage.getItem(STICKER_KEY)) || {}; } catch (e) { return {}; } };
@@ -777,10 +784,10 @@
       <h3 class="h2">⊹ my top 3 </h3>
       <div class="quotes">${c.quotes.map(q => `<div class="note">${esc(q)}</div>`).join('')}</div>
       <div class="play">
-        <iframe class="squishy" src="needoh.html" title="A pink squishy cube you can press and drag" loading="lazy"></iframe>
+        <div class="squish-wrap"><iframe class="squishy" src="needoh.html" title="A pink squishy cube you can press and drag" loading="lazy"></iframe><span class="tip" aria-hidden="true">⊹ squish the NeeDoh ₊˚‧</span></div>
         <iframe class="mines" id="mines" src="minesweeper.html?embed" title="Minesweeper game" loading="lazy"></iframe>
         ${STICKERS.map(st => `<button class="sticker" data-id="${st.id}" aria-label="${esc(st.label)}. Drag, or use the arrow keys, to move it"
-          style="--h:${st.h}px;--r:${st.r}deg"><img src="${st.src}" alt="" draggable="false"></button>`).join('')}
+          style="--h:${st.h}px;--r:${st.r}deg"><img src="${st.src}" alt="" draggable="false"><span class="tip ${st.hintAt}" aria-hidden="true">⊹ ${esc(st.hint)} ₊˚‧</span></button>`).join('')}
       </div>`;
   }
 
